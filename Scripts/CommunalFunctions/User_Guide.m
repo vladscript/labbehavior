@@ -1,7 +1,8 @@
 %% USER GUIDE
 % Run these scripts to measure behavior 
 % after analyzing videos in DeepLabCut for:
-% * |BEFORE |, Import functions: *
+% 
+% *|BEFORE ANYTHING|*, import functions: 
 % 
 % >>Import_Scripts
 % 

@@ -1,5 +1,10 @@
 %% Setup
-clear; clc
+clear;
+global distance;
+global point1;
+global point2;
+clc
+
 fs=30; % aprox same sampling frequency of ALL videos 
 %% Load CSV
 fprintf('\nWhy did the mouse cross the bridge?'); pause(2); clc;
@@ -82,51 +87,116 @@ for n=1:numel(CrossingTimes)
     Nframes(n)=numel(CrossingTimes{n});
     plot(ax1,CrossingTimes{n},NTLs(Bindx),'*k')
 end
+%% Scale to Centimeters
+
+% Accept just ALL good LIkelihoods in average
+% WALL: A-B
+isOKcornerA=mean(GaitTable.CornerAL)>LikelihoodThreshold;
+isOKcornerB=mean(GaitTable.CornerBL)>LikelihoodThreshold;
+% WALL: C-D
+isOKcornerC=mean(GaitTable.CornerCL)>LikelihoodThreshold;
+isOKcornerD=mean(GaitTable.CornerDL)>LikelihoodThreshold;
+MaximumX=max(GaitTable.NoseX(GaitTable.NoseX>=LikelihoodThreshold));
+ 
+% Retrieve Coordinates
+if sum([isOKcornerA,isOKcornerB,isOKcornerC,isOKcornerD])<4
+    
+    [FNsnap,PNsnap] = uigetfile('*.png',sprintf('Snapshot from %s video',FileName),...
+        'MultiSelect', 'off',FileUbication);
+    [Diameters,Corners]=borders_api(FileName,PNsnap,FNsnap); % corners
+    CornerA=Corners(1,:);
+    CornerB=Corners(2,:);
+    CornerC=Corners(3,:);
+    CornerD=Corners(4,:);
+else
+    % A corner
+    CornerA = mean([GaitTable.CornerAX(GaitTable.CornerAL>=LikelihoodThreshold),...
+        GaitTable.CornerAY(GaitTable.CornerAL>=LikelihoodThreshold)]);
+    % B corner
+    CornerB = mean([GaitTable.CornerBX(GaitTable.CornerBL>=LikelihoodThreshold),...
+        GaitTable.CornerBY(GaitTable.CornerBL>=LikelihoodThreshold)]);
+    % C corner
+    CornerC = mean([GaitTable.CornerCX(GaitTable.CornerCL>=LikelihoodThreshold),...
+        GaitTable.CornerCY(GaitTable.CornerCL>=LikelihoodThreshold)]);
+    % D corner
+    CornerD = mean([GaitTable.CornerDX(GaitTable.CornerDL>=LikelihoodThreshold),...
+        GaitTable.CornerDY(GaitTable.CornerDL>=LikelihoodThreshold)]);
+end
+
+% % Build Total Space Area: A-B-C-D
+[mAB,bAB]=getlineWall(CornerA,CornerB);
+[mCD,bCD]=getlineWall(CornerC,CornerD);
+fprintf('>Border lines slope difference: %3.2f\n',abs(mAB-mCD));
+fprintf('>Y-offset difference: %3.2f pixels\n',abs(bAB-bCD));
+
 %% Analyze Longest Crossing
 % Not necessary true, maight expend time hesitating
 [~,Crossin]=max(Nframes);
 InterValInit=min(CrossingTimes{Crossin});
 InterValEnd=max(CrossingTimes{Crossin});
+
 %% Check Limbs
-Xmin=min([GaitTable.TailTipX(GaitTable.TailTipL>LikelihoodThreshold);...
-    GaitTable.NoseX(GaitTable.NoseL>LikelihoodThreshold)]);
-Xmax=max([GaitTable.TailTipX(GaitTable.TailTipL>LikelihoodThreshold);...
-    GaitTable.NoseX(GaitTable.NoseL>LikelihoodThreshold)]);
-Ymax=max([GaitTable.TailTipY(GaitTable.TailTipL>LikelihoodThreshold);...
-    GaitTable.NoseY(GaitTable.NoseL>LikelihoodThreshold)]);
-Ymin=min([GaitTable.TailTipY(GaitTable.TailTipL>LikelihoodThreshold);...
-    GaitTable.NoseY(GaitTable.NoseL>LikelihoodThreshold)]);
+
+dTailNose=[];
+STPS={};
 for n=1:numel(CrossingTimes)
+% for n=1:1
     figure('Name',['Mouse Crossing n=',num2str(n)],'NumberTitle','off')
     Ax{n}=subplot(1,1,1);
-    Ax{n}.XLim=[Xmin,Xmax];
-    Ax{n}.YLim=[Ymin,Ymax];
+    dAB=get_distance([CornerA;CornerB]);
+    dCD=get_distance([CornerC;CornerD]);
+    dAC=get_distance([CornerA;CornerC]);
+    dBD=get_distance([CornerB;CornerD]);
+    xLen=max([dAB(end),dCD(end)]);
+    yLen=max([dAC(end),dBD(end)]);
+    Ax{n}.XLim=[round(min([CornerA(1),CornerB(1),CornerC(1),CornerD(1)])-0.1*xLen),...
+        round(max([CornerA(1),CornerB(1),CornerC(1),CornerD(1)])+0.1*xLen)];
+    Ax{n}.YLim=[round(min([CornerA(2),CornerB(2),CornerC(2),CornerD(2)])-0.1*yLen),...
+        round(max([CornerA(2),CornerB(2),CornerC(2),CornerD(2)])+0.1*yLen)];
+    set(Ax{n},'Color',[0.25,0.25,0.25]);
     % Ax.XLimMode:
     hold(Ax{n}, 'on')
+    plot(Ax{n},[CornerA(1),CornerB(1)],[CornerA(2),CornerB(2)],'g--','LineWidth',2); 
+    plot(Ax{n},[CornerC(1),CornerD(1)],[CornerC(2),CornerD(2)],'g--','LineWidth',2);
     Ax{n}.YDir='reverse';
     % Upper Limb Left
-    ULPplot=plot(Ax{n},0.5,0.5,'xk','MarkerSize',5,'LineWidth',2); % Palm
-    ULFplot=plot(Ax{n},0.4,0.4,'^k','MarkerSize',5,'LineWidth',2); % Finger
-    ULHplot=plot(Ax{n},0.3,0.3,'ok','MarkerSize',5,'LineWidth',2); % Heel
+    ULPplot=plot(Ax{n},0.5,0.5,'xb','MarkerSize',5,'LineWidth',2); % Palm
+    ULFplot=plot(Ax{n},0.4,0.4,'^b','MarkerSize',5,'LineWidth',2); % Finger
+    ULHplot=plot(Ax{n},0.3,0.3,'ob','MarkerSize',5,'LineWidth',2); % Heel
     % Upper Limb Right
-    URPplot=plot(Ax{n},0.8,0.8,'xk','MarkerSize',5,'LineWidth',2); % Palm
-    URFplot=plot(Ax{n},0.7,0.7,'^k','MarkerSize',5,'LineWidth',2); % Finger
-    URHplot=plot(Ax{n},0.6,0.6,'ok','MarkerSize',5,'LineWidth',2); % Heel
+    URPplot=plot(Ax{n},0.8,0.8,'xb','MarkerSize',5,'LineWidth',2); % Palm
+    URFplot=plot(Ax{n},0.7,0.7,'^b','MarkerSize',5,'LineWidth',2); % Finger
+    URHplot=plot(Ax{n},0.6,0.6,'ob','MarkerSize',5,'LineWidth',2); % Heel
     % Lower Limb Left
-    LLPplot=plot(Ax{n},0.3,0.5,'xr','MarkerSize',5,'LineWidth',2); % Palm
-    LLFplot=plot(Ax{n},0.2,0.4,'^r','MarkerSize',5,'LineWidth',2); % Finger
-    LLHplot=plot(Ax{n},0.1,0.3,'or','MarkerSize',5,'LineWidth',2); % Heel
+    LLPplot=plot(Ax{n},0.3,0.5,'xb','MarkerSize',5,'LineWidth',2); % Palm
+    LLFplot=plot(Ax{n},0.2,0.4,'^b','MarkerSize',5,'LineWidth',2); % Finger
+    LLHplot=plot(Ax{n},0.1,0.3,'ob','MarkerSize',5,'LineWidth',2); % Heel
     % Lower Limb Right
-    LRPplot=plot(Ax{n},0.6,0.8,'xr','MarkerSize',5,'LineWidth',2); % Palm
-    LRFplot=plot(Ax{n},0.5,0.7,'^r','MarkerSize',5,'LineWidth',2); % Finger
-    LRHplot=plot(Ax{n},0.4,0.6,'or','MarkerSize',5,'LineWidth',2); % Heel
+    LRPplot=plot(Ax{n},0.6,0.8,'xb','MarkerSize',5,'LineWidth',2); % Palm
+    LRFplot=plot(Ax{n},0.5,0.7,'^b','MarkerSize',5,'LineWidth',2); % Finger
+    LRHplot=plot(Ax{n},0.4,0.6,'ob','MarkerSize',5,'LineWidth',2); % Heel
+    % Axis Nose Tail
+    AxisNT=plot([0,10],[20,30],'Color','k','LineWidth',2);
+    % Set off visibility
     set([ULPplot,ULFplot,ULHplot,URPplot,URFplot,URHplot,...
-        LLPplot,LLFplot,LLHplot,LRPplot,LRFplot,LRHplot],'Visible','off');
+        LLPplot,LLFplot,LLHplot,LRPplot,LRFplot,LRHplot,AxisNT],...
+        'Visible','off');
     
     TimesNH=CrossingTimes{n};
     fprintf('>Cross %i Frame:',n);
+    
+    R2Lstride=[];
+    L2Rstride=[];
+    Mr2l=[];
+    Ml2r=[];
     for i=1:numel(TimesNH) 
         fprintf('%i,',TimesNH(i))
+        AxisNT.XData = [GaitTable.NoseX(TimesNH(i)),GaitTable.TailBaseX(TimesNH(i))];
+        AxisNT.YData = [GaitTable.NoseY(TimesNH(i)),GaitTable.TailBaseY(TimesNH(i))];
+        d=get_distance([AxisNT.XData;AxisNT.YData]);
+        dTailNose=[dTailNose;d(end)];
+        AxisNT.Visible='on';
+        
         % Upper Limb Left ###############################################
         XYul=[];
         % Palm
@@ -264,208 +334,46 @@ for n=1:numel(CrossingTimes)
 %             fprintf('No LoleftLimb')
 %         end
         % Stride Lines $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-        if size(XYll,1)==3 && size(XYur,1)==3
-            disp('YES')
-            plot(Ax{n},[mean(XYll(:,1)),mean(XYur(:,1))],[mean(XYll(:,2)),mean(XYur(:,2))],'--r')
+        
+        if size(XYll,1)==3 && size(XYur,1)==3 % right2left stride
+            plot(Ax{n},[XYll(1,1),XYur(1,1)],[XYll(1,2),XYur(1,2)],'--r')
+            disp('right2left stride')
+            R2Lstride=[R2Lstride;XYur(1,:);XYll(1,:)];
+            [mRL,bRL]=getlineWall(XYur(1,:),XYll(1,:));
+            % xlin=CornerA(1):CornerB;
+            % ylin=mRL.*xlin+bRL;
+            % plot(xlin,ylin,'y');
+            Mr2l=[Mr2l;mRL];
         end
-        if size(XYlr,1)==3 && size(XYul,1)==3
-            disp('YES')
-            plot(Ax{n},[mean(XYlr(:,1)),mean(XYul(:,1))],[mean(XYlr(:,2)),mean(XYul(:,2))],'--r')
+        if size(XYlr,1)==3 && size(XYul,1)==3 % left2right stride
+            plot(Ax{n},[XYlr(1,1),XYul(1,1)],[XYlr(1,2),XYul(1,2)],'--r')
+            disp('left2right stride')
+            L2Rstride=[L2Rstride;XYul(1,:);XYlr(1,:)];
+            [mLR,bLR]=getlineWall(XYul(1,:),XYlr(1,:));
+            % xlin=CornerC(1):CornerD;
+            % ylin=mLR.*xlin+bLR;
+            % plot(xlin,ylin,'m');
+            Ml2r=[Ml2r;mLR];
         end
-%         P(1)=~isempty(XYll);
-%         P(2)=~isempty(XYlr);
-%         P(3)=~isempty(XYul);
-%         P(4)=~isempty(XYur);
-%         AllP={XYll,XYlr,XYul,XYur};
-%         Equis=[];
-%         Yes=[];
-%         for p=1:4
-%             if P(p)
-%                Equis=[Equis,AllP{p}(1)];
-%                Yes=[Yes,AllP{p}(2)];
-%             end
-%         end
-%         if numel(Yes)>1
-%             for j=1:numel(Yes)-1
-%                 for k=j+1:numel(Yes)
-%                     plot(Ax{n},[Equis(j),Equis(k)],[Yes(j),Yes(k)],'--m')
-%                     if numel(Yes)==4
-%                         plot(Ax{n},[Equis(j),Equis(k)],[Yes(j),Yes(k)],...
-%                             '-k','LineWidth',2)
-%                     end
-%                 end
-%             end
-%         end
+        
         drawnow;
         pause(0.1);
     end
+    % Stride diagonal among paws
+    [indxRL,indxLR]=closeperpslopes(Mr2l,Ml2r);
+    STPS{n,1}=R2Lstride([indxRL*2-1,indxRL*2],:);
+    STPS{n,2}=L2Rstride([indxLR*2-1,indxLR*2],:);
+    % Steps
+    plotsteps(indxRL,R2Lstride);
+    plotsteps(indxLR,L2Rstride);
     fprintf('\n')
 end
-
-
 %% Check Corners #########################################################
 
 % Only if ALL of them were detected
 
 % Estimation as perfect rectangle NO WAY, more like a TRAPEZE
 
-% Load Snapshot of Experiment
-%  Draw two lines
-%  Get Corners *********************
-
-%% Scale to Centimeters
-%% Save & Export Results
-% Necessary for actual dimension
-
-% Accept good LIkelihoods
-% WALL: A-B
-% isOKcornerA=mean(GaitTable.CornerAL)>LikelihoodThreshold;
-% isOKcornerB=mean(GaitTable.CornerBL)>LikelihoodThreshold;
-% % WALL: C-D
-% isOKcornerC=mean(GaitTable.CornerCL)>LikelihoodThreshold;
-% isOKcornerD=mean(GaitTable.CornerDL)>LikelihoodThreshold;
-% MaximumX=max(GaitTable.NoseX(GaitTable.NoseX>=LikelihoodThreshold));
-% 
-% % Retrieve Coordinates
-% % A corner
-% CornerA = [GaitTable.CornerAX(GaitTable.CornerAL>=LikelihoodThreshold),...
-%     GaitTable.CornerAY(GaitTable.CornerAL>=LikelihoodThreshold)];
-% % B corner
-% CornerB = [GaitTable.CornerBX(GaitTable.CornerBL>=LikelihoodThreshold),...
-%     GaitTable.CornerBY(GaitTable.CornerBL>=LikelihoodThreshold)];
-% % C corner
-% CornerC = [GaitTable.CornerCX(GaitTable.CornerCL>=LikelihoodThreshold),...
-%     GaitTable.CornerCY(GaitTable.CornerCL>=LikelihoodThreshold)];
-% % D corner
-% CornerD = [GaitTable.CornerDX(GaitTable.CornerDL>=LikelihoodThreshold),...
-%     GaitTable.CornerDY(GaitTable.CornerDL>=LikelihoodThreshold)];
-% % Axy=[0,0]; Bxy=[0,0]; Cxy=[0,0]; Dxy=[0,0];
-% if sum([isOKcornerA,isOKcornerB,isOKcornerC,isOKcornerD])<3
-%     fprintf('>>Check Corners: missing at least 2 corner positions: ');
-%     if ~isempty(CornerA)
-%         XYcornerA=[mean(CornerA(:,1)),mean(CornerA(:,2))];
-%         isOKcornerA=true;
-%     else
-%         fprintf('A,');
-%     end
-%     if ~isempty(CornerB)
-%         XYcornerB=[mean(CornerB(:,1)),mean(CornerB(:,2))];
-%         isOKcornerB=true;
-%     else
-%         fprintf('B,');
-%     end
-%     if ~isempty(CornerC)
-%         XYcornerC=[mean(CornerC(:,1)),mean(CornerC(:,2))];
-%         isOKcornerC=true;
-%     else
-%         fprintf('C,');
-%     end
-%     if ~isempty(CornerD)
-%         XYcornerD=[mean(CornerD(:,1)),mean(CornerD(:,2))];
-%         isOKcornerD=true;
-%     else
-%         fprintf('D,');
-%     end
-%     fprintf('\n');
-%     % Get Lines Positions
-%     if sum([isempty(CornerA),isempty(CornerB),isempty(CornerC),isempty(CornerD)])==2
-%         if ~isOKcornerA && ~isOKcornerB
-%             
-%         end
-%         if ~isOKcornerA && ~isOKcornerC
-%             
-%         end    
-%         if ~isOKcornerA && ~isOKcornerD
-%             
-%         end
-%         if ~isOKcornerB && ~isOKcornerC
-%             
-%         end 
-%         if ~isOKcornerB && ~isOKcornerD
-%             [mAC,bAC]=getlineWall(XYcornerA,XYcornerC);
-%             xlineAC=linspace(0,round(max(CornerC(:,1))));
-%             LineAC=mAC*xlineAC+bAC;
-%             
-%             % Perpendicular
-% %             LineAB=(-1/mAC)*xlineAC+-1/mAC)*bAC+-XYcornerA(2);
-%             
-%             if XYcornerC(2)>XYcornerA(2)
-%                 XYcornerB=[MaximumX,(-1/mAC)*MaximumX+bAC]
-%             end
-%         end    
-%         if ~isOKcornerC && ~isOKcornerD
-%             
-%         end            
-%     else
-%         fprintf('>>No identified Walls\n')
-%         ContinueStep=false;
-%     end
-% else
-%     fprintf('>>Building walls:\n');
-%     % All corners detected
-%     if and(isOKcornerA,isOKcornerB)
-%         fprintf('A-B\n');
-%         XYcornerA=[mean(CornerA(:,1)),mean(CornerA(:,2))];
-%         XYcornerB=[mean(CornerB(:,1)),mean(CornerB(:,2))];
-%         [mAB,bAB]=getlineWall(XYcornerA,XYcornerB);
-%         xlineAB=linspace(0,round(max(CornerB(:,1))));
-%         LineAB=mAB*xlineAB+bAB;
-%     end
-%     if and(isOKcornerC,isOKcornerD)
-%         fprintf('C-D\n');
-%         XYcornerC=[mean(CornerC(:,1)),mean(CornerC(:,2))];
-%         XYcornerD=[mean(CornerD(:,1)),mean(CornerD(:,2))];
-%         [mCD,bCD]=getlineWall(XYcornerC,XYcornerD);
-%         xlineCD=linspace(0,round(max(CornerD(:,1))));
-%         LineCD=mCD*xlineCD+bCD;
-%     end
-%     % Three corners detected
-%     if xor(isOKcornerA,isOKcornerB) % Missing Line A-B
-%         fprintf('A-B estimating:');
-%         % Line CD exists
-%         if isOKcornerA
-%             XYcornerA=[mean(CornerA(:,1)),mean(CornerA(:,2))];
-%             OffsetAC=sqrt((XYcornerC(1)-XYcornerA(1)).^2+(XYcornerC(2)-XYcornerA(2)).^2);
-%             XYcornerB=[XYcornerD(1),XYcornerD(2)-OffsetAC];
-%             bOffset=bCD-OffsetAC;
-%             LimitX=CornerA(1);
-%             fprintf('B\n')
-%         else 
-%             XYcornerB=[mean(CornerB(:,1)),mean(CornerB(:,2))];
-%             OffsetBD=sqrt((XYcornerD(1)-XYcornerB(1)).^2+(XYcornerD(2)-XYcornerB(2)).^2);
-%             XYcornerA=[XYcornerC(1),XYcornerC(2)-OffsetBD];
-%             bOffset=bCD-OffsetBD;
-%             LimitX=CornerB(1);
-%             fprintf('A\n')
-%         end
-%         xlineAB=linspace(0,round(max(CornerD(:,1))));
-%         LineAB=mCD*xlineAB+bOffset;
-%     elseif xor(isOKcornerC,isOKcornerD) % Missing Line C-D
-%         fprintf('A-B estimating:');
-%         % Line AB exists
-%         if isOKcornerC
-%             XYcornerC=[mean(CornerC(:,1)),mean(CornerC(:,2))];
-%             OffsetAC=sqrt((XYcornerC(1)-XYcornerA(1)).^2+(XYcornerC(2)-XYcornerA(2)).^2);
-%             XYcornerD=[XYcornerB(1),XYcornerB(2)+OffsetAC];
-%             bOffset=bAB+OffsetAC;
-%             LimitX=CornerB(1);
-%             fprintf('D\n')
-%         else 
-%             XYcornerD=[mean(CornerD(:,1)),mean(CornerD(:,2))];
-%             OffsetBD=sqrt((XYcornerD(1)-XYcornerB(1)).^2+(XYcornerD(2)-XYcornerB(2)).^2);
-%             XYcornerC=[XYcornerA(1),XYcornerA(2)+OffsetBD];
-%             bOffset=bAB+OffsetBD;
-%             LimitX=CornerB(1);
-%             fprintf('C\n')
-%         end
-%         xlineCD=linspace(0,round(max(CornerB(:,1))));
-%         LineCD=mAB*xlineCD+bOffset;
-%     end
-%     fprintf('\n');
-% end
-% % Build Total Space Area: A-B-C-D
-% % Width Bridge (varaince of CornerX)
-% 
 % %% Tail and Nose Axis
 % if ContinueStep
 %     % Physical Limits: mice are shorter than AC & BD distances

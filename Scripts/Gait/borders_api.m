@@ -23,15 +23,15 @@
 %   CnstntConv: Constante centimeter conversion
 %               CnstntConv(1): For Width
 %               CnstntConv(2): For Height
-function [Lengths,CnstntConv,Centers]=borders_api(VidName,PNsnap,FNsnap)
+function [Lengths,Centers]=borders_api(VidName,PNsnap,FNsnap)
 global distance; % Measures from 'imdistline'
 global point1;
 global point2;
-BarNames={'Superior','Inferior'};
+BarNames={'Superior Border','Inferior Border'};
 Lengths=[0,0];
-CnstntConv=[0,0];
+% CnstntConv=[0,0];
 Centers=[];
-MEASURES; % Load Diameter Mesures
+% BRIDGEMEASURE; % loads BridgeWidth var
 point1=1; point2=1;
 for i=1:2 % make it Twice
     distance=0;
@@ -51,7 +51,7 @@ for i=1:2 % make it Twice
         api.setDragConstraintFcn(fcn); 
         % api.setMagnification(0.5) % 2X = 200%
         % imoverview(AxImage)
-        fprintf('\n  1. Trace %s Diameter',BarNames{i})
+        fprintf('\n  1. Trace %s ',BarNames{i})
         fprintf('\n  2. Right click on line to export and overwrite the variables:');
         fprintf('\n<<distance>>\n<<point1>>\n<<point2>>');
         fprintf('\n  3. and CLOSE snapshot figure\n')
@@ -65,24 +65,7 @@ for i=1:2 % make it Twice
             % Save Line Points
             Centers=[Centers;point1;point2];
         end
-       
-       % Choose size of diameter
-       choice = questdlg('Measured diameter?', ...
-            'Kind of Diameter', ...
-            'Big (red)','Small (purple)','cancel','cancel');
-        % Handle response
-        switch choice
-            case 'Big (red)'
-                disp([choice ' diameter.'])
-                cmConverse = BridgeWidth;
-            case 'Small (purple)'
-                disp([choice ' diameter.'])
-                cmConverse = BridgeWidth;
-            case 'cancel'
-                disp('Check again.')
-                distance = 0;
-        end
     end
     Lengths(i)=distance;
-    CnstntConv(i)=cmConverse;
+%     CnstntConv(i)=cmConverse;
 end
