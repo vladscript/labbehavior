@@ -140,7 +140,7 @@ InterValEnd=max(CrossingTimes{Crossin});
 dTailNose=[];
 STPS={};
 for n=1:numel(CrossingTimes)
-% for n=1:1
+% for n=4:4
     figure('Name',['Mouse Crossing n=',num2str(n)],'NumberTitle','off')
     Ax{n}=subplot(1,1,1);
     dAB=get_distance([CornerA;CornerB]);
@@ -360,89 +360,40 @@ for n=1:numel(CrossingTimes)
         pause(0.1);
     end
     % Stride diagonal among paws
-    [indxRL,indxLR]=closeperpslopes(Mr2l,Ml2r);
+    [indxRL,indxLR]=closeperpslopes(Mr2l,Ml2r,R2Lstride,L2Rstride);
+    
     STPS{n,1}=R2Lstride([indxRL*2-1,indxRL*2],:);
     STPS{n,2}=L2Rstride([indxLR*2-1,indxLR*2],:);
     % Steps
     plotsteps(indxRL,R2Lstride);
     plotsteps(indxLR,L2Rstride);
     fprintf('\n')
+    if or(~isempty( STPS{n,1}),~isempty( STPS{n,2}))
+        % Front Right to Back Left
+        XYrl=STPS{n,1};
+        % Front Left to Back Right
+        XYlr=STPS{n,2};
+        % Gettting Distance
+        XYlrclean=mergecloseones(XYlr,MinLengt);
+        XYrlclean=mergecloseones(XYrl,MinLengt);
+        fprintf('>Front Right to Back Left steps: %i\n',size(XYrlclean,1));
+        fprintf('>Front Left to Back Right steps: %i\n',size(XYlrclean,1));
+        plotsteps([],XYlrclean,'kx',3);
+        plotsteps([],XYrlclean,'k*',3);
+        STPs{n,1}=XYlrclean;
+        STPs{n,2}=XYrlclean;
+    else
+        fprintf('>No Steps detected\n')
+    end
 end
-%% Check Corners #########################################################
-
-% Only if ALL of them were detected
-
-% Estimation as perfect rectangle NO WAY, more like a TRAPEZE
-
-% %% Tail and Nose Axis
-% if ContinueStep
-%     % Physical Limits: mice are shorter than AC & BD distances
-%     LenghtThreshold=3*sqrt((XYcornerA(:,1)-XYcornerC(:,1)).^2+(XYcornerA(:,2)-XYcornerC(:,2)).^2);
-%     OkDet=OkDet(NoseTailLenght<LenghtThreshold);
-%     TailXY=[GaitTable.TailBaseX(OkDet),GaitTable.TailBaseY(OkDet)];
-%     NoseXY=[GaitTable.NoseX(OkDet),GaitTable.NoseY(OkDet)];
-%     NoseTailLenght=sqrt((TailXY(:,1)-NoseXY(:,1)).^2+(TailXY(:,2)-NoseXY(:,2)).^2);
-% 
-%     %% Exploration
-%     % WORK SPACE: BRIDGE
-%     figure
-%     AreaWork=subplot(1,1,1);
-%     plot(AreaWork,xlineAB,LineAB,'--k','LineWidth',2); hold on;
-%     plot(AreaWork,xlineCD,LineCD,'--k','LineWidth',2);
-%     plot(AreaWork,XYcornerA(1),XYcornerA(2),'+','MarkerEdgeColor','r'); 
-%     plot(AreaWork,XYcornerB(1),XYcornerB(2),'+','MarkerEdgeColor','r'); 
-%     plot(AreaWork,XYcornerC(1),XYcornerC(2),'+','MarkerEdgeColor','r'); 
-%     plot(AreaWork,XYcornerD(1),XYcornerD(2),'+','MarkerEdgeColor','r'); 
-%     plot(AreaWork,XYcornerA(1),XYcornerA(2),'s','MarkerSize',10,'MarkerEdgeColor','k'); 
-%     plot(AreaWork,XYcornerB(1),XYcornerB(2),'s','MarkerSize',10,'MarkerEdgeColor','k'); 
-%     plot(AreaWork,XYcornerC(1),XYcornerC(2),'s','MarkerSize',10,'MarkerEdgeColor','k'); 
-%     plot(AreaWork,XYcornerD(1),XYcornerD(2),'s','MarkerSize',10,'MarkerEdgeColor','k'); 
-% 
-%     hold(AreaWork,'on')
-%     AreaWork.ALimMode='manual';
-%     AreaWork.XLim=[0,max([XYcornerD(1),XYcornerB(1)])];
-%     AreaWork.YLim=[0,max([XYcornerC(2),XYcornerD(2)])];
-%     grid on;
-%     AreaWork.YDir='reverse';
-%     % %% ANIMATION
-%     if DataOK
-%     aux=0;
-%     TimeLine=plot(ax1,[0,0],[min(NoseTailLenght),max(NoseTailLenght)],...
-%         'LineWidth',2,'Color','red','LineStyle','--');
-%     for n=1:numel(OkDet)
-%         % Modify Objects
-%         TimeLine.XData=[TimeAxis(n),TimeAxis(n)];
-%         if ismember(TimeAxis(n),AllTimesWalk)
-%             if aux>0
-%                 TailBase.Visible='on';
-%                 Nose.Visible='on';
-%                 AxisNT.Visible='on';
-%                 TailBase.XData=TailXY(n,1);
-%                 TailBase.YData=TailXY(n,2);
-%                 Nose.XData=NoseXY(n,1);
-%                 Nose.YData=NoseXY(n,2);
-%                 AxisNT.XData=[TailXY(n,1),NoseXY(n,1)];
-%                 AxisNT.YData=[TailXY(n,2),NoseXY(n,2)];
-%             else % Create Objects
-%                 TailBase=plot(AreaWork,TailXY(n,1),TailXY(n,2),...
-%                     'Marker','*','MarkerEdgeColor',[1,0,0],'MarkerFaceColor',[1 .6 .6],'MarkerSize',5);
-%                 Nose=plot(AreaWork,NoseXY(n,1),NoseXY(n,2),...
-%                     'Marker','d','MarkerEdgeColor',[0,0,1],'MarkerFaceColor',[.6 .6 1],'MarkerSize',5);
-%                 AxisNT=plot([TailXY(n,1),NoseXY(n,1)],[TailXY(n,2),NoseXY(n,2)],...
-%                     'Color','k','LineWidth',2);
-%                 aux=aux+1;
-%             end
-%         else
-%             if aux>0
-%                 TailBase.Visible='off';
-%                 Nose.Visible='off';
-%                 AxisNT.Visible='off';
-%             end
-%         end
-% 
-%         drawnow
-%         pause(0.1)
-%         fprintf('Progress: %3.2f\n',100*n/numel(OkDet));
-%     end
-%     end
-% end
+%% Analyze Steps
+% hallfigs = findall(groot,'Type','figure');
+for n=1:size(STPs,1)
+    if or(~isempty( STPs{n,1}),~isempty( STPs{n,2}))
+        dStrideLR=get_distance(STPs{n,1}(1:2:end,:))
+        STPs{n,2}
+        
+    else
+        fprintf('>Nothing')
+    end
+end
