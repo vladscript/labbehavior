@@ -18,7 +18,15 @@ if numel(mRL)>2 && numel(mLR)>2
     end
     %     [~,i]=min(abs(Modedist));
     diffslist=abs(Modedist);
-    [minlist,minindx]=find(diffslist<=epsislope);
+    if numel(Modedist)>1
+        [minlist,minindx]=find(diffslist<=epsislope);
+        if isempty(minlist)
+            [minlist,minindx]=min(diffslist);
+        end
+    else
+        minlist=Modedist;
+        minindx=1;
+    end
     
     for j=1:numel(minlist)
         fprintf('\n>Checking slope peaks of %3.2f & %3.2f',...
@@ -36,7 +44,7 @@ if numel(mRL)>2 && numel(mLR)>2
     [~,auxX]=max(Xvardiff);
     indxRL=indxs(minindx( auxX ),1);
     indxLR=indxs(minindx( auxX ),2);
-    widthslope=max([wRL(indxRL),wLR(indxLR)])
+    widthslope=max([wRL(indxRL),wLR(indxLR)]);
     fprintf('>Right-Left Stride slope %3.2f +/- %3.2f\n',...
         smRL(indxRL),widthslope);
     fprintf('>Left-Right Stride slope %3.2f +/- %3.2f\n',...

@@ -378,10 +378,10 @@ for n=1:numel(CrossingTimes)
         XYrlclean=mergecloseones(XYrl,MinLengt);
         fprintf('>Front Right to Back Left steps: %i\n',size(XYrlclean,1));
         fprintf('>Front Left to Back Right steps: %i\n',size(XYlrclean,1));
-        plotsteps([],XYlrclean,'kx',3);
+        plotsteps([],XYlrclean,'ko',3);
         plotsteps([],XYrlclean,'k*',3);
-        STPs{n,1}=XYlrclean;
-        STPs{n,2}=XYrlclean;
+        STPs{n,1}=XYlrclean; % left to rigth
+        STPs{n,2}=XYrlclean; % rigth to left
     else
         fprintf('>No Steps detected\n')
     end
@@ -397,3 +397,32 @@ for n=1:size(STPs,1)
         fprintf('>Nothing')
     end
 end
+%% Pixel to CM
+BRIDGEMEASURE; % loads cm @ BridgeWidth var
+%       y = mx + b  ->  y-mx-b=0    ->  Ax+By+C=0
+%                                   A =-m; B=1 C=-b
+% Distanci line to point (x_1,y_1)
+% D=abs(Ax_1+By_1+C)/sqrt(A.^2+B.^2)
+PerpSlope=1/mean([mAB,mCD]); % m
+% CD line to point
+x_1=STPs{n,1}(1);y_1=STPs{n,1}(2);
+
+A=-mean([mAB,mCD]); B=1; C=-bAB;
+alph1=abs(A*x_1+B*y_1+C)/sqrt(A.^2+B.^2);
+
+A=-mean([mAB,mCD]); B=1; C=-bCD;
+alph2=abs(A*x_1+B*y_1+C)/sqrt(A.^2+B.^2);
+
+dAB=alph1+alph2;
+Theta=pi-atan(PerpSlope)
+yCM=abs(BridgeWidth*sin(Theta));
+xCM=abs(BridgeWidth*cos(Theta));
+yPIX=abs(dAB*sin(Theta));
+xPIX=abs(dAB*cos(Theta));
+yRate=yCM/yPIX;
+xRate=xCM/xPIX;
+%  For the Point
+% deg2rad(180)
+% rad2deg( atan(Perpednicular) )
+% alp=abs()
+
