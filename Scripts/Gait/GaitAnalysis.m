@@ -1,5 +1,5 @@
 %% Setup
-clear;
+clear; close all;
 global distance;
 global point1;
 global point2;
@@ -17,6 +17,7 @@ fprintf('done.\n')
 % LikelihoodThreshold=0.95; Try this w/IMG_0063 to stimate 3 corners
 
 %% Read TailBase - Nose Axis
+fprintf('>Reading data:')
 % Samples with acceptable likelihood of detectino
 OkDet=intersect(find(GaitTable.TailBaseL>=LikelihoodThreshold),...
         find(GaitTable.NoseL>=LikelihoodThreshold));
@@ -25,6 +26,8 @@ NoseXY=[GaitTable.NoseX(OkDet),GaitTable.NoseY(OkDet)];
 NoseTailLenght=sqrt((TailXY(:,1)-NoseXY(:,1)).^2+(TailXY(:,2)-NoseXY(:,2)).^2);    
 TimeAxis=GaitTable.TimeIndex(OkDet)+1; % From DLC it starts @ 0
 NTLs=smooth(NoseTailLenght,20);
+fprintf('done\n')
+fprintf('Plotting Nose-Tail Axis length distribution:')
 figure
 ax1=subplot(1,3,[1,2]);
 plot(TimeAxis,NoseTailLenght,TimeAxis,NTLs);
@@ -67,6 +70,7 @@ else
     disp('>>ATTENTION: Nose-Tail-Axis missdetected!!')
     DataOK=false;
 end
+fprintf('done.\n')
 %% Detecting Crosses
 CrossingTimes={};
 TimesOK=TimeAxis(IndexesOK);
@@ -87,7 +91,7 @@ for n=1:numel(CrossingTimes)
     Nframes(n)=numel(CrossingTimes{n});
     plot(ax1,CrossingTimes{n},NTLs(Bindx),'*k')
 end
-%% Scale to Centimeters
+%% Corners Bridge A-B-C-D
 
 % Accept just ALL good LIkelihoods in average
 % WALL: A-B
@@ -357,7 +361,7 @@ for n=1:numel(CrossingTimes)
         end
         
         drawnow;
-        pause(0.1);
+        pause(0.01);
     end
     % Stride diagonal among paws
     [indxRL,indxLR]=closeperpslopes(Mr2l,Ml2r,R2Lstride,L2Rstride);
@@ -374,55 +378,133 @@ for n=1:numel(CrossingTimes)
         % Front Left to Back Right
         XYlr=STPS{n,2};
         % Gettting Distance
-        XYlrclean=mergecloseones(XYlr,MinLengt);
-        XYrlclean=mergecloseones(XYrl,MinLengt);
+        if ~isempty(XYlr)
+            XYlrclean=mergecloseones(XYlr,MinLengt);
+        else
+            XYlrclean=[];
+        end
+        if ~isempty(XYrl)
+            XYrlclean=mergecloseones(XYrl,MinLengt);
+        else
+            XYrlclean=[];
+        end
         fprintf('>Front Right to Back Left steps: %i\n',size(XYrlclean,1));
         fprintf('>Front Left to Back Right steps: %i\n',size(XYlrclean,1));
-        plotsteps([],XYlrclean,'ko',3);
-        plotsteps([],XYrlclean,'k*',3);
+        plotsteps([],XYlrclean,'gx',3);
+        plotsteps([],XYrlclean,'gx',3);
+        
+        % INSERt HERE CODE to IMDIStLINE
+        
+        
+        
         STPs{n,1}=XYlrclean; % left to rigth
         STPs{n,2}=XYrlclean; % rigth to left
     else
         fprintf('>No Steps detected\n')
     end
 end
-%% Analyze Steps
-% hallfigs = findall(groot,'Type','figure');
-for n=1:size(STPs,1)
-    if or(~isempty( STPs{n,1}),~isempty( STPs{n,2}))
-        dStrideLR=get_distance(STPs{n,1}(1:2:end,:))
-        STPs{n,2}
-        
-    else
-        fprintf('>Nothing')
-    end
-end
 %% Pixel to CM
 BRIDGEMEASURE; % loads cm @ BridgeWidth var
 %       y = mx + b  ->  y-mx-b=0    ->  Ax+By+C=0
 %                                   A =-m; B=1 C=-b
-% Distanci line to point (x_1,y_1)
-% D=abs(Ax_1+By_1+C)/sqrt(A.^2+B.^2)
-PerpSlope=1/mean([mAB,mCD]); % m
-% CD line to point
-x_1=STPs{n,1}(1);y_1=STPs{n,1}(2);
+A1=-mean([mAB,mCD]); B1=1; C1=-bAB; % AB line equation
+A2=-mean([mAB,mCD]); B2=1; C2=-bCD; % CD line equation
+DAB=abs(C2-C1)/sqrt(A1^2+B1^2);
+cmSlahpisx=BridgeWidth/DAB;
+% Example:
+% % Arbitrary  points
+% x_1=STPs{1,1}(1,1);y_1=STPs{1,1}(1,2);
+% x_2=STPs{1,2}(1,1);y_2=STPs{1,2}(1,2);
+% dpix=get_distance([x_1,y_1;x_2,y_2]);
+% dpix=dpix(end);
+% dcm=dpix*cmSlahpisx;
 
-A=-mean([mAB,mCD]); B=1; C=-bAB;
-alph1=abs(A*x_1+B*y_1+C)/sqrt(A.^2+B.^2);
+%% Read imdistlist app
+fprintf('\n>Select Figure with best steps detected and press ENTER\n');
+pause
+hidl=imdistline;
+fprintf('Import the following variables:\nStepLength1\nStepLength2\nRLstride\nLRstride\nFrontWidth\nBackWidth\n')
+fprintf('Then press ENTER\n')
+pause;
+StepLength=mean([StepLength1,StepLength2]);
+% RLstride;
+% LRstride;
+% FrontWidth;
+% BackWidth;
 
-A=-mean([mAB,mCD]); B=1; C=-bCD;
-alph2=abs(A*x_1+B*y_1+C)/sqrt(A.^2+B.^2);
+%% Analyze Steps
+% hallfigs = findall(groot,'Type','figure');
+Step=[];
+RLStride=[];
+LRStride=[];
+FWidth=[];
+BWidth=[];
 
-dAB=alph1+alph2;
-Theta=pi-atan(PerpSlope)
-yCM=abs(BridgeWidth*sin(Theta));
-xCM=abs(BridgeWidth*cos(Theta));
-yPIX=abs(dAB*sin(Theta));
-xPIX=abs(dAB*cos(Theta));
-yRate=yCM/yPIX;
-xRate=xCM/xPIX;
-%  For the Point
-% deg2rad(180)
-% rad2deg( atan(Perpednicular) )
-% alp=abs()
-
+for n=1:size(STPs,1)
+    XYl2r=STPs{n,1}; % left to rigth 
+    XYr2l=STPs{n,2}; % rigth to left
+    if and(~isempty(XYl2r),~isempty(XYr2l))
+        fprintf('>Detected %i left-right & %i right-left strides\n',...
+            size(XYl2r,1),size(XYr2l,1))
+    else
+        fprintf('>Undetected ')
+        if ~isempty(XYl2r)
+            fprintf('right-left')
+        elseif ~isempty(XYr2l)
+            fprintf('left-right')
+        else
+            fprintf('both')
+        end
+        fprintf(' strides\n');
+    end
+    Step = [Step,anlayzestrides([XYl2r;XYr2l],StepLength)];
+    RLStride=[RLStride,anlayzestrides(XYr2l,RLstride)];
+    LRStride=[LRStride,anlayzestrides(XYl2r,LRstride)];
+    FWidth=[FWidth,anlayzestrides([XYl2r;XYr2l],FrontWidth)];
+    BWidth=[BWidth,anlayzestrides([XYl2r;XYr2l],BackWidth)];
+end
+if exist('FNsnap','var')
+    disp(FNsnap)
+else
+    disp(FileName)
+end
+    
+disp(cmSlahpisx*[mean(Step),mean(RLStride),mean(LRStride),mean(FWidth),mean(BWidth)])
+%% Pixel to CM
+% BRIDGEMEASURE; % loads cm @ BridgeWidth var
+% %       y = mx + b  ->  y-mx-b=0    ->  Ax+By+C=0
+% %                                   A =-m; B=1 C=-b
+% % Distanci line to point (x_1,y_1)
+% % D=abs(Ax_1+By_1+C)/sqrt(A.^2+B.^2)
+% PerpSlope=1/mean([mAB,mCD]); % perpendicular average line to bridge
+% % angle between vertical [pi=180°] and perpendicular line to bridge: pi - ...
+% % angle between horizontal line and perpendicular line to bridge: atan
+% Theta=pi-atan(PerpSlope); % [RADIANS] 
+% 
+% % Distance between AB and CD = BridgeWidth [cm]
+% yCM=abs(BridgeWidth*sin(Theta)); % Y-projection in CM
+% xCM=abs(BridgeWidth*cos(Theta)); % X-projection in CM
+% 
+% A1=-mean([mAB,mCD]); B1=1; C1=-bAB;
+% A2=-mean([mAB,mCD]); B2=1; C2=-bCD;
+% 
+% DAB=abs(C2-C1)/sqrt(A1^2+B1^2);
+% cmSlahpisx=BridgeWidth/DAB;
+% yPIX=abs(DAB*sin(Theta));
+% xPIX=abs(DAB*cos(Theta));
+% yRate=yCM/yPIX;
+% xRate=xCM/xPIX;
+% 
+% % Arbitrary  points
+% x_1=STPs{1,1}(1,1);y_1=STPs{1,1}(1,2);
+% x_2=STPs{1,2}(1,1);y_2=STPs{1,2}(1,2);
+% 
+% % DAB
+% dpix=get_distance([x_1,y_1;x_2,y_2]);
+% dpix=dpix(end);
+% dcm=dpix*cmSlahpisx;
+% 
+% % Differences
+% dX=abs(x_1-x_2).*xRate;
+% dY=abs(y_1-y_2).*yRate;
+% sqrt(dX^2+dY^2);

@@ -43,7 +43,11 @@ for i=1:2 % make it Twice
         % AxImage=image(SnapShot);
         imshow([PNsnap,FNsnap]);
         % hSP = imscrollpanel(SnapFig,AxImage);
-        h=imdistline(gca);
+        if i==1
+            h=imdistline(gca);
+        else
+            h=imdistline(gca,[point1(1),point2(1)],[point1(2),point2(2)]);
+        end
         api = iptgetapi(h);
         fcn = makeConstrainToRectFcn('imline',...
                               get(gca,'XLim'),get(gca,'YLim'));
