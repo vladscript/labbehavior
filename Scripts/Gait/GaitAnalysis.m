@@ -62,9 +62,10 @@ if numel(probsModes)>0
         peakPos(ModeIndx)-WidthPeak(ModeIndx)],'--k')
     % Time Intervals where Axis-Tail Length was Maximum
     MinLengt=peakPos(ModeIndx)-WidthPeak(ModeIndx);
+    MinLenTh = inputdlg('Length Threshold : ','pixels', [1 75], {num2str(MinLengt)});
+    MinLengt=str2double( MinLenTh{1});
     IndexesOK=find(NTLs>MinLengt);  % Indexes above threshold
     % Discontinuos samples
-
     DataOK=true;
 else
     disp('>>ATTENTION: Nose-Tail-Axis missdetected!!')
@@ -105,7 +106,7 @@ MaximumX=max(GaitTable.NoseX(GaitTable.NoseX>=LikelihoodThreshold));
 % Retrieve Coordinates
 if sum([isOKcornerA,isOKcornerB,isOKcornerC,isOKcornerD])<4
     
-    [FNsnap,PNsnap] = uigetfile('*.png',sprintf('Snapshot from %s video',FileName),...
+    [FNsnap,PNsnap] = uigetfile({'*.png';'*.jpg'},sprintf('Snapshot from %s video',FileName),...
         'MultiSelect', 'off',FileUbication);
     [Diameters,Corners]=borders_api(FileName,PNsnap,FNsnap); % corners
     CornerA=Corners(1,:);
@@ -133,26 +134,39 @@ end
 fprintf('>Border lines slope difference: %3.2f\n',abs(mAB-mCD));
 fprintf('>Y-offset difference: %3.2f pixels\n',abs(bAB-bCD));
 
-%% Analyze Longest Crossing
-% Not necessary true, maight expend time hesitating
-[~,Crossin]=max(Nframes);
-InterValInit=min(CrossingTimes{Crossin});
-InterValEnd=max(CrossingTimes{Crossin});
+%% Pixel to CM
+BRIDGEMEASURE; % loads cm @ BridgeWidth var
+%       y = mx + b  ->  y-mx-b=0    ->  Ax+By+C=0
+%                                   A =-m; B=1 C=-b
+A1=-mean([mAB,mCD]); B1=1; C1=-bAB; % AB line equation
+A2=-mean([mAB,mCD]); B2=1; C2=-bCD; % CD line equation
+DAB=abs(C2-C1)/sqrt(A1^2+B1^2);
+cmSlahpisx=BridgeWidth/DAB;
+% Example:
+% % Arbitrary  points
+% x_1=STPs{1,1}(1,1);y_1=STPs{1,1}(1,2);
+% x_2=STPs{1,2}(1,1);y_2=STPs{1,2}(1,2);
+% dpix=get_distance([x_1,y_1;x_2,y_2]);
+% dpix=dpix(end);
+% dcm=dpix*cmSlahpisx;
 
 %% Check Limbs
-
+TableData=table;
 dTailNose=[];
 STPS={};
-for n=1:numel(CrossingTimes)
-% for n=4:4
+dAB=get_distance([CornerA;CornerB]);
+dCD=get_distance([CornerC;CornerD]);
+dAC=get_distance([CornerA;CornerC]);
+dBD=get_distance([CornerB;CornerD]);
+xLen=max([dAB(end),dCD(end)]);
+yLen=max([dAC(end),dBD(end)]);
+ncro=1;
+for n=1:numel(CrossingTimes) % Loop for crossing times
+    SignDir=[]; % Change of Direction Detector
+    naux=1; % auxiliar counter: increase each Crossing and Direction change
+    % Make Figure
     figure('Name',['Mouse Crossing n=',num2str(n)],'NumberTitle','off')
     Ax{n}=subplot(1,1,1);
-    dAB=get_distance([CornerA;CornerB]);
-    dCD=get_distance([CornerC;CornerD]);
-    dAC=get_distance([CornerA;CornerC]);
-    dBD=get_distance([CornerB;CornerD]);
-    xLen=max([dAB(end),dCD(end)]);
-    yLen=max([dAC(end),dBD(end)]);
     Ax{n}.XLim=[round(min([CornerA(1),CornerB(1),CornerC(1),CornerD(1)])-0.1*xLen),...
         round(max([CornerA(1),CornerB(1),CornerC(1),CornerD(1)])+0.1*xLen)];
     Ax{n}.YLim=[round(min([CornerA(2),CornerB(2),CornerC(2),CornerD(2)])-0.1*yLen),...
@@ -193,283 +207,324 @@ for n=1:numel(CrossingTimes)
     L2Rstride=[];
     Mr2l=[];
     Ml2r=[];
+    Mr2lindex=[];
+    Ml2rindex=[];
+    CenterXY=[];
+    iok=[];
     for i=1:numel(TimesNH) 
-        fprintf('%i,',TimesNH(i))
-        AxisNT.XData = [GaitTable.NoseX(TimesNH(i)),GaitTable.TailBaseX(TimesNH(i))];
-        AxisNT.YData = [GaitTable.NoseY(TimesNH(i)),GaitTable.TailBaseY(TimesNH(i))];
-        d=get_distance([AxisNT.XData;AxisNT.YData]);
-        dTailNose=[dTailNose;d(end)];
-        AxisNT.Visible='on';
-        
-        % Upper Limb Left ###############################################
-        XYul=[];
-        % Palm
-        if GaitTable.LimbLeftUpL(TimesNH(i))>LikelihoodThreshold
-            ULPplot.XData = GaitTable.LimbLeftUpX(TimesNH(i));
-            ULPplot.YData = GaitTable.LimbLeftUpY(TimesNH(i));
-            ULPplot.Visible='on';
-            XYul=[XYul; ULPplot.XData,ULPplot.YData];
-        else
-            ULPplot.Visible='off';
+        CenterXYactual=[mean([GaitTable.NoseX(TimesNH(i)),GaitTable.TailBaseX(TimesNH(i))]),mean([GaitTable.NoseY(TimesNH(i)),GaitTable.TailBaseY(TimesNH(i))])];
+        % IF Mouese CENTER is in between WALLS
+        if and(and(CenterXYactual(1)>CornerA(1),CenterXYactual(1)<CornerB(1)) && and(CenterXYactual(2)>CornerB(2),CenterXYactual(2)<CornerC(2)),...
+                GaitTable.NoseL(TimesNH(i))>LikelihoodThreshold && GaitTable.TailBaseL(TimesNH(i))>LikelihoodThreshold )
+            
+            CenterXY=[CenterXY;mean([GaitTable.NoseX(TimesNH(i)),GaitTable.TailBaseX(TimesNH(i))]),mean([GaitTable.NoseY(TimesNH(i)),GaitTable.TailBaseY(TimesNH(i))])];
+            plot(mean([GaitTable.NoseX(TimesNH(i)),GaitTable.TailBaseX(TimesNH(i))]),mean([GaitTable.NoseY(TimesNH(i)),GaitTable.TailBaseY(TimesNH(i))]),'y+');
+            % plot(GaitTable.NoseX(TimesNH(i)),GaitTable.NoseY(TimesNH(i)),'yd');
+            p1 = [GaitTable.TailBaseX(TimesNH(i)),GaitTable.TailBaseY(TimesNH(i))]; % First Point
+            p2 = [GaitTable.NoseX(TimesNH(i)),GaitTable.NoseY(TimesNH(i))];         % Second Point
+            dp = p2-p1;                         % Difference
+            if dp(1)<0
+                fprintf('\n<-Going left\n')
+                direction=0;
+            elseif dp(1)>0
+                fprintf('\nGoing right->\n')
+                direction=1;
+            else
+                fprintf('no movimiento')
+            end
+            SignDir=[SignDir;sign(dp(1))];
+            quiver(p1(1),p1(2),dp(1),dp(2),'LineStyle','-','Color','w')
+            iok=[iok;i];
+            fprintf('%i,',TimesNH(i))
+            AxisNT.XData = [GaitTable.NoseX(TimesNH(i)),GaitTable.TailBaseX(TimesNH(i))];
+            AxisNT.YData = [GaitTable.NoseY(TimesNH(i)),GaitTable.TailBaseY(TimesNH(i))];
+            d=get_distance([AxisNT.XData;AxisNT.YData]);
+            dTailNose=[dTailNose;d(end)];
+            AxisNT.Visible='on';
+
+            % Upper Limb Left ###############################################
+            XYul=[];
+            % Palm
+            if GaitTable.LimbLeftUpL(TimesNH(i))>LikelihoodThreshold
+                ULPplot.XData = GaitTable.LimbLeftUpX(TimesNH(i));
+                ULPplot.YData = GaitTable.LimbLeftUpY(TimesNH(i));
+                ULPplot.Visible='on';
+                XYul=[XYul; ULPplot.XData,ULPplot.YData];
+            else
+                ULPplot.Visible='off';
+            end
+            % Finger
+            if GaitTable.FingersLeftUpL(TimesNH(i))>LikelihoodThreshold
+                ULFplot.XData = GaitTable.FingersLeftUpX(TimesNH(i));
+                ULFplot.YData = GaitTable.FingersLeftUpY(TimesNH(i));
+                ULFplot.Visible='on';
+                XYul=[XYul; ULFplot.XData,ULFplot.YData];
+            else
+                ULFplot.Visible='off';
+            end
+            % Heel
+            if GaitTable.HeelLeftUpL(TimesNH(i))>LikelihoodThreshold
+                ULHplot.XData = GaitTable.HeelLeftUpX(TimesNH(i));
+                ULHplot.YData = GaitTable.HeelLeftUpY(TimesNH(i));
+                ULHplot.Visible='on';
+                XYul=[XYul; ULHplot.XData,ULHplot.YData];
+            else
+                ULHplot.Visible='off';
+            end
+            if ~isempty(XYul)
+                UpLeftLimb=true;
+            else
+                UpLeftLimb=false;
+            end
+            % Upper Limb Right ###############################################
+            XYur=[];
+            % Palm
+            if GaitTable.LimbRightUpL(TimesNH(i))>LikelihoodThreshold
+                URPplot.XData = GaitTable.LimbRightUpX(TimesNH(i));
+                URPplot.YData = GaitTable.LimbRightUpY(TimesNH(i));
+                URPplot.Visible='on';
+                XYur=[XYur;URPplot.XData,URPplot.YData];
+            else
+                URPplot.Visible='off';
+            end
+            % Finger
+            if GaitTable.FingersRightUpL(TimesNH(i))>LikelihoodThreshold
+                URFplot.XData = GaitTable.FingersRightUpX(TimesNH(i));
+                URFplot.YData = GaitTable.FingersRightUpY(TimesNH(i));
+                URFplot.Visible='on';
+                XYur=[XYur;URFplot.XData,URFplot.YData];
+            else
+                URFplot.Visible='off';
+            end
+            % Heel
+            if GaitTable.HeelLeftUpL(TimesNH(i))>LikelihoodThreshold
+                URHplot.XData = GaitTable.HeelLeftUpX(TimesNH(i));
+                URHplot.YData = GaitTable.HeelLeftUpY(TimesNH(i));
+                URHplot.Visible='on';
+                XYur=[XYur;URHplot.XData,URHplot.YData];
+            else
+                URHplot.Visible='off';
+            end
+            if ~isempty(XYur)
+                UpRightLimb=true;
+            else
+                UpRightLimb=false;
+            end
+            % Lower Limb Left  ###############################################
+            XYll=[];
+            % Left Palm
+            if GaitTable.LimbLeftLoL(TimesNH(i))>LikelihoodThreshold
+                LLPplot.XData = GaitTable.LimbLeftLoX(TimesNH(i));
+                LLPplot.YData = GaitTable.LimbLeftLoY(TimesNH(i));
+                LLPplot.Visible='on';
+                XYll=[XYll;LLPplot.XData,LLPplot.YData];
+            else
+                LLPplot.Visible='off';
+            end
+            % Left Finger
+            if GaitTable.FingersLeftLoL(TimesNH(i))>LikelihoodThreshold
+                LLFplot.XData = GaitTable.FingersLeftLoX(TimesNH(i));
+                LLFplot.YData = GaitTable.FingersLeftLoY(TimesNH(i));
+                LLFplot.Visible='on';
+                XYll=[XYll;LLFplot.XData,LLFplot.YData];
+            else
+                LLFplot.Visible='off';
+            end
+            % Left Heel
+            if GaitTable.HeelLeftLoL(TimesNH(i))>LikelihoodThreshold
+                LLHplot.XData = GaitTable.HeelLeftLoX(TimesNH(i));
+                LLHplot.YData = GaitTable.HeelLeftLoY(TimesNH(i));
+                LLHplot.Visible='on';
+                XYll=[XYll;LLHplot.XData,LLHplot.YData];
+            else
+                LLHplot.Visible='off';
+            end
+            if ~isempty(XYll)
+                LowLeftLimb=true;
+            else
+                LowLeftLimb=false;
+            end
+            % Lower Limb Right  ###########################################
+            XYlr=[];
+            % Palm
+            if GaitTable.LimbRightLoL(TimesNH(i))>LikelihoodThreshold
+                LRPplot.XData = GaitTable.LimbRightLoX(TimesNH(i));
+                LRPplot.YData = GaitTable.LimbRightLoY(TimesNH(i));
+                LRPplot.Visible='on';
+                XYlr=[XYlr;LRPplot.XData,LRPplot.YData];
+            else
+                LRPplot.Visible='off';
+            end
+            %  Finger
+            if GaitTable.FingersLeftLoL(TimesNH(i))>LikelihoodThreshold
+                LRFplot.XData = GaitTable.FingersLeftLoX(TimesNH(i));
+                LRFplot.YData = GaitTable.FingersLeftLoY(TimesNH(i));
+                LRFplot.Visible='on';
+                XYlr=[XYlr;LRFplot.XData,LRFplot.YData];
+            else
+                LRFplot.Visible='off';
+            end
+            %  Heel
+            if GaitTable.HeelLeftLoL(TimesNH(i))>LikelihoodThreshold
+                LRHplot.XData = GaitTable.HeelLeftLoX(TimesNH(i));
+                LRHplot.YData = GaitTable.HeelLeftLoY(TimesNH(i));
+                LRHplot.Visible='on';
+                XYlr=[XYlr;LRHplot.XData,LRHplot.YData];
+            else
+                LRHplot.Visible='off';
+            end
+            if ~isempty(XYlr)
+                LowRightLimb=true;
+            else
+                LowRightLimb=false;
+            end
+            % Stride Lines $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+            % init as NaNs
+            mXYul=NaN;
+            mXYll=NaN;
+            mXYur=NaN;
+            mXYlr=NaN;
+            % Checking Points: 0:left, 1:right
+            if direction
+                % left limb Y are above(visually) below(numerically) of Center
+                if UpLeftLimb
+                    mXYul=mean(XYul(XYul(:,2)>CenterXYactual(:,2),:),1);
+                end
+                if LowLeftLimb
+                    mXYll=mean(XYll(XYll(:,2)>CenterXYactual(:,2),:),1);
+                end
+                % right limbs Y are below(visually) below(numerically) of Center
+                if UpRightLimb
+                    mXYur=mean(XYur(XYur(:,2)<CenterXYactual(:,2),:),1);
+                end
+                if LowRightLimb
+                    mXYlr=mean(XYlr(XYlr(:,2)<CenterXYactual(:,2),:),1);
+                end
+            else
+                % left limb Y are above(visually) below(numerically) of Center
+                if UpLeftLimb
+                    mXYul=mean(XYul(XYul(:,2)<CenterXYactual(:,2),:),1);
+                end
+                if LowLeftLimb
+                    mXYll=mean(XYll(XYll(:,2)<CenterXYactual(:,2),:),1);
+                end
+                % right limbs Y are below(visually) below(numerically) of Center
+                if UpRightLimb
+                    mXYur=mean(XYur(XYur(:,2)>CenterXYactual(:,2),:),1);
+                end
+                if LowRightLimb
+                    mXYlr=mean(XYlr(XYlr(:,2)>CenterXYactual(:,2),:),1);
+                end
+            end
+            % IF missdetected
+            if isnan(mXYul(1))
+                UpLeftLimb=false;
+            end
+            if isnan(mXYll(1))
+                LowLeftLimb=false;
+            end
+            if isnan(mXYur(1))
+                UpRightLimb=false;
+            end
+            if isnan(mXYlr(1))
+                LowRightLimb=false;
+            end
+            % Plotting
+            % DIAGONALS ---------------------------------------------
+            if LowLeftLimb && UpRightLimb % right2left stride
+                plot(Ax{n},[mXYll(:,1),mXYur(:,1)],[mXYll(:,2),mXYur(:,2)],'-*m')
+                disp('right2left stride')
+                R2Lstride=[R2Lstride;mXYur;mXYll];
+                [mRL,bRL]=getlineWall(mXYur,mXYll);
+                Mr2l=[Mr2l;mRL];
+                Mr2lindex=[Mr2lindex,1];
+            else
+                Mr2lindex=[Mr2lindex,0];
+            end
+            if LowRightLimb && UpLeftLimb % left2right stride
+                plot(Ax{n},[mXYlr(:,1),mXYul(:,1)],[mXYlr(:,2),mXYul(:,2)],'-*r')
+                disp('left2right stride')
+                L2Rstride=[L2Rstride;mXYul;mXYlr];
+                [mLR,bLR]=getlineWall(mXYul,mXYlr);
+                Ml2r=[Ml2r;mLR];
+                Ml2rindex=[Ml2rindex,1];
+            else
+                Ml2rindex=[Ml2rindex,0];
+            end
+            drawnow;
+            pause(0.01);
         end
-        % Finger
-        if GaitTable.FingersLeftUpL(TimesNH(i))>LikelihoodThreshold
-            ULFplot.XData = GaitTable.FingersLeftUpX(TimesNH(i));
-            ULFplot.YData = GaitTable.FingersLeftUpY(TimesNH(i));
-            ULFplot.Visible='on';
-            XYul=[XYul; ULFplot.XData,ULFplot.YData];
-        else
-            ULFplot.Visible='off';
-        end
-        % Heel
-        if GaitTable.HeelLeftUpL(TimesNH(i))>LikelihoodThreshold
-            ULHplot.XData = GaitTable.HeelLeftUpX(TimesNH(i));
-            ULHplot.YData = GaitTable.HeelLeftUpY(TimesNH(i));
-            ULHplot.Visible='on';
-            XYul=[XYul; ULHplot.XData,ULHplot.YData];
-        else
-            ULHplot.Visible='off';
-        end
-%         if ~isempty(XYul)
-%             XYul=mean(XYul,1);
-%         else
-%             fprintf('No UpLeftLimb')
-%         end
-        % Upper Limb Right ###############################################
-        XYur=[];
-        % Palm
-        if GaitTable.LimbRightUpL(TimesNH(i))>LikelihoodThreshold
-            URPplot.XData = GaitTable.LimbRightUpX(TimesNH(i));
-            URPplot.YData = GaitTable.LimbRightUpY(TimesNH(i));
-            URPplot.Visible='on';
-            XYur=[XYur;URPplot.XData,URPplot.YData];
-        else
-            URPplot.Visible='off';
-        end
-        % Finger
-        if GaitTable.FingersRightUpL(TimesNH(i))>LikelihoodThreshold
-            URFplot.XData = GaitTable.FingersRightUpX(TimesNH(i));
-            URFplot.YData = GaitTable.FingersRightUpY(TimesNH(i));
-            URFplot.Visible='on';
-            XYur=[XYur;URFplot.XData,URFplot.YData];
-        else
-            URFplot.Visible='off';
-        end
-        % Heel
-        if GaitTable.HeelLeftUpL(TimesNH(i))>LikelihoodThreshold
-            URHplot.XData = GaitTable.HeelLeftUpX(TimesNH(i));
-            URHplot.YData = GaitTable.HeelLeftUpY(TimesNH(i));
-            URHplot.Visible='on';
-            XYur=[XYur;URHplot.XData,URHplot.YData];
-        else
-            URHplot.Visible='off';
-        end
-%         if ~isempty(XYur)
-%             XYur=mean(XYur,1);
-%         else
-%             fprintf('No UpRightLimb')
-%         end
-        % Lower Limb Left  ###############################################
-        XYll=[];
-        % Left Palm
-        if GaitTable.LimbLeftLoL(TimesNH(i))>LikelihoodThreshold
-            LLPplot.XData = GaitTable.LimbLeftLoX(TimesNH(i));
-            LLPplot.YData = GaitTable.LimbLeftLoY(TimesNH(i));
-            LLPplot.Visible='on';
-            XYll=[XYll;LLPplot.XData,LLPplot.YData];
-        else
-            LLPplot.Visible='off';
-        end
-        % Left Finger
-        if GaitTable.FingersLeftLoL(TimesNH(i))>LikelihoodThreshold
-            LLFplot.XData = GaitTable.FingersLeftLoX(TimesNH(i));
-            LLFplot.YData = GaitTable.FingersLeftLoY(TimesNH(i));
-            LLFplot.Visible='on';
-            XYll=[XYll;LLFplot.XData,LLFplot.YData];
-        else
-            LLFplot.Visible='off';
-        end
-        % Left Heel
-        if GaitTable.HeelLeftLoL(TimesNH(i))>LikelihoodThreshold
-            LLHplot.XData = GaitTable.HeelLeftLoX(TimesNH(i));
-            LLHplot.YData = GaitTable.HeelLeftLoY(TimesNH(i));
-            LLHplot.Visible='on';
-            XYll=[XYll;LLHplot.XData,LLHplot.YData];
-        else
-            LLHplot.Visible='off';
-        end
-%         if ~isempty(XYll)
-%             XYll=mean(XYll,1);
-%         else
-%             fprintf('No LoLeftLimb')
-%         end
-        % Lower Limb Right  ###############################################
-        XYlr=[];
-        % Palm
-        if GaitTable.LimbRightLoL(TimesNH(i))>LikelihoodThreshold
-            LRPplot.XData = GaitTable.LimbRightLoX(TimesNH(i));
-            LRPplot.YData = GaitTable.LimbRightLoY(TimesNH(i));
-            LRPplot.Visible='on';
-            XYlr=[XYlr;LRPplot.XData,LRPplot.YData];
-        else
-            LRPplot.Visible='off';
-        end
-        %  Finger
-        if GaitTable.FingersLeftLoL(TimesNH(i))>LikelihoodThreshold
-            LRFplot.XData = GaitTable.FingersLeftLoX(TimesNH(i));
-            LRFplot.YData = GaitTable.FingersLeftLoY(TimesNH(i));
-            LRFplot.Visible='on';
-            XYlr=[XYlr;LRFplot.XData,LRFplot.YData];
-        else
-            LRFplot.Visible='off';
-        end
-        %  Heel
-        if GaitTable.HeelLeftLoL(TimesNH(i))>LikelihoodThreshold
-            LRHplot.XData = GaitTable.HeelLeftLoX(TimesNH(i));
-            LRHplot.YData = GaitTable.HeelLeftLoY(TimesNH(i));
-            LRHplot.Visible='on';
-            XYlr=[XYlr;LRHplot.XData,LRHplot.YData];
-        else
-            LRHplot.Visible='off';
-        end
-%         if ~isempty(XYlr)
-%             XYlr=mean(XYlr,1);
-%         else
-%             fprintf('No LoleftLimb')
-%         end
-        % Stride Lines $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-        
-        if size(XYll,1)==3 && size(XYur,1)==3 % right2left stride
-            plot(Ax{n},[XYll(1,1),XYur(1,1)],[XYll(1,2),XYur(1,2)],'--r')
-            disp('right2left stride')
-            R2Lstride=[R2Lstride;XYur(1,:);XYll(1,:)];
-            [mRL,bRL]=getlineWall(XYur(1,:),XYll(1,:));
-            % xlin=CornerA(1):CornerB;
-            % ylin=mRL.*xlin+bRL;
-            % plot(xlin,ylin,'y');
-            Mr2l=[Mr2l;mRL];
-        end
-        if size(XYlr,1)==3 && size(XYul,1)==3 % left2right stride
-            plot(Ax{n},[XYlr(1,1),XYul(1,1)],[XYlr(1,2),XYul(1,2)],'--r')
-            disp('left2right stride')
-            L2Rstride=[L2Rstride;XYul(1,:);XYlr(1,:)];
-            [mLR,bLR]=getlineWall(XYul(1,:),XYlr(1,:));
-            % xlin=CornerC(1):CornerD;
-            % ylin=mLR.*xlin+bLR;
-            % plot(xlin,ylin,'m');
-            Ml2r=[Ml2r;mLR];
-        end
-        
-        drawnow;
-        pause(0.01);
     end
-    % Stride diagonal among paws
-    [indxRL,indxLR]=closeperpslopes(Mr2l,Ml2r,R2Lstride,L2Rstride);
-    
-    STPS{n,1}=R2Lstride([indxRL*2-1,indxRL*2],:);
-    STPS{n,2}=L2Rstride([indxLR*2-1,indxLR*2],:);
-    % Steps
-    plotsteps(indxRL,R2Lstride);
-    plotsteps(indxLR,L2Rstride);
-    fprintf('\n')
-    if or(~isempty( STPS{n,1}),~isempty( STPS{n,2}))
-        % Front Right to Back Left
-        XYrl=STPS{n,1};
-        % Front Left to Back Right
-        XYlr=STPS{n,2};
-        % Gettting Distance
-        if ~isempty(XYlr)
-            XYlrclean=mergecloseones(XYlr,MinLengt);
-        else
-            XYlrclean=[];
-        end
-        if ~isempty(XYrl)
-            XYrlclean=mergecloseones(XYrl,MinLengt);
-        else
-            XYrlclean=[];
-        end
-        fprintf('>Front Right to Back Left steps: %i\n',size(XYrlclean,1));
-        fprintf('>Front Left to Back Right steps: %i\n',size(XYlrclean,1));
-        plotsteps([],XYlrclean,'gx',3);
-        plotsteps([],XYrlclean,'gx',3);
-        
-        % INSERt HERE CODE to IMDIStLINE
-        
-        
-        
-        STPs{n,1}=XYlrclean; % left to rigth
-        STPs{n,2}=XYrlclean; % rigth to left
+    DirChanages=find(diff(SignDir)~=0);
+    Inters=[1;DirChanages;numel(SignDir)];
+    A=1;
+    for j=2:numel(Inters)
+        B=Inters(j);
+        % Path
+        Path{naux}=CenterXY(iok(A:B));
+        % Steps
+        A=B+1;
+        naux=naux+1;
+    end
+    % STEPS ANLAYSIS ##################################
+    if and(sum(Ml2rindex)>0,sum(Mr2lindex)>0)
+        % [STPS,KS]=getsetpmagic(Ml2rindex,Mr2lindex,L2Rstride,R2Lstride);
+        %     KS=0 when LR and KS=1 when RL
+        STePS_LR=getsetpmagicOK(Ml2rindex,L2Rstride);
+        STePS_RL=getsetpmagicOK(Mr2lindex,R2Lstride);
+%         % Steps per Limb:
+%         STPS{1,1}=UpLeftLimb;
+%         STPS{1,2}=UpRightLimb;
+%         STPS{1,3}=LowLeftLimb;
+%         STPS{1,4}=LowRightLimb;
+        STPS=getSTEPSok(STePS_LR,STePS_RL);
+        % Make Table:
+        T=makesteptable(STPS,ncro,cmSlahpisx);
+        TableData=[TableData;T];
+        ncro=ncro+1;
+%         if 1==1
+            pause;
+%         end
     else
-        fprintf('>No Steps detected\n')
+        fprintf('\nNo STEPs detected\n')
     end
 end
-%% Pixel to CM
-BRIDGEMEASURE; % loads cm @ BridgeWidth var
-%       y = mx + b  ->  y-mx-b=0    ->  Ax+By+C=0
-%                                   A =-m; B=1 C=-b
-A1=-mean([mAB,mCD]); B1=1; C1=-bAB; % AB line equation
-A2=-mean([mAB,mCD]); B2=1; C2=-bCD; % CD line equation
-DAB=abs(C2-C1)/sqrt(A1^2+B1^2);
-cmSlahpisx=BridgeWidth/DAB;
-% Example:
-% % Arbitrary  points
-% x_1=STPs{1,1}(1,1);y_1=STPs{1,1}(1,2);
-% x_2=STPs{1,2}(1,1);y_2=STPs{1,2}(1,2);
-% dpix=get_distance([x_1,y_1;x_2,y_2]);
-% dpix=dpix(end);
-% dcm=dpix*cmSlahpisx;
 
-%% Read imdistlist app
-fprintf('\n>Select Figure with best steps detected and press ENTER\n');
-pause
-hidl=imdistline;
-fprintf('Import the following variables:\nStepLength1\nStepLength2\nRLstride\nLRstride\nFrontWidth\nBackWidth\n')
-fprintf('Then press ENTER\n')
-pause;
-StepLength=mean([StepLength1,StepLength2]);
-% RLstride;
-% LRstride;
-% FrontWidth;
-% BackWidth;
+%% Save
+% Saving Directory:
+fprintf('\n>Saving ...\n')
+disp(TableData)
+CurDir=pwd;
+eslaches=strfind(CurDir,filesep);
 
-%% Analyze Steps
-% hallfigs = findall(groot,'Type','figure');
-Step=[];
-RLStride=[];
-LRStride=[];
-FWidth=[];
-BWidth=[];
+NameFolder='GaitStrides';
+FileDirSave=[CurDir(1:eslaches(end)),NameFolder,filesep];
 
-for n=1:size(STPs,1)
-    XYl2r=STPs{n,1}; % left to rigth 
-    XYr2l=STPs{n,2}; % rigth to left
-    if and(~isempty(XYl2r),~isempty(XYr2l))
-        fprintf('>Detected %i left-right & %i right-left strides\n',...
-            size(XYl2r,1),size(XYr2l,1))
-    else
-        fprintf('>Undetected ')
-        if ~isempty(XYl2r)
-            fprintf('right-left')
-        elseif ~isempty(XYr2l)
-            fprintf('left-right')
-        else
-            fprintf('both')
-        end
-        fprintf(' strides\n');
-    end
-    Step = [Step,anlayzestrides([XYl2r;XYr2l],StepLength)];
-    RLStride=[RLStride,anlayzestrides(XYr2l,RLstride)];
-    LRStride=[LRStride,anlayzestrides(XYl2r,LRstride)];
-    FWidth=[FWidth,anlayzestrides([XYl2r;XYr2l],FrontWidth)];
-    BWidth=[BWidth,anlayzestrides([XYl2r;XYr2l],BackWidth)];
-end
 if exist('FNsnap','var')
-    disp(FNsnap)
+    NameOut=FNsnap;
 else
-    disp(FileName)
+    NameOut=FileName;
 end
-    
-disp(cmSlahpisx*[mean(Step),mean(RLStride),mean(LRStride),mean(FWidth),mean(BWidth)])
+DotIndex=strfind(NameOut,'.');
+if isempty(DotIndex)
+    DotIndex=numel(NameOut);
+end
+NameOK = inputdlg('Save table as: ','Press OK to save; CANCEL to discard', [1 75], {NameOut(1:DotIndex-1)});
+
+if isempty(NameOK )
+    disp('> DISCARDED MEASUREMENT')
+else
+    fprintf('> SAVE at ')
+    if ~isdir([FileDirSave])
+        fprintf('created ');
+        mkdir(FileDirSave);
+    end
+    fprintf('\n%s\n',FileDirSave);
+    fprintf('\n%s\n',NameOK{1});
+    writetable(TableData,[FileDirSave,NameOK{1},'.csv']);
+    disp('SAVED')
+end
+
 %% Pixel to CM
 % BRIDGEMEASURE; % loads cm @ BridgeWidth var
 % %       y = mx + b  ->  y-mx-b=0    ->  Ax+By+C=0

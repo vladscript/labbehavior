@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>USER GUIDE</title><meta name="generator" content="MATLAB 8.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-07-31"><meta name="DC.source" content="User_Guide.m"><style type="text/css">
+      --><title>USER GUIDE</title><meta name="generator" content="MATLAB 8.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2022-05-08"><meta name="DC.source" content="User_Guide.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -66,15 +66,13 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
 
 
-  </style></head><body><div class="content"><h1>USER GUIDE</h1><!--introduction--><p>Run these scripts to measure behavior after analyzing videos in DeepLabCut for: 1- Circular Open Field 2- Gait Analysis 3- AIMs</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">0- Import functions</a></li><li><a href="#2">1- Circular Open Field</a></li><li><a href="#3">2- Gait Analysis</a></li><li><a href="#4">3- AIMs</a></li><li><a href="#5">END</a></li></ul></div><h2>0- Import functions<a name="1"></a></h2><p>&gt;&gt;Import_Scripts</p><h2>1- Circular Open Field<a name="2"></a></h2><p>Visualizes Centroid Trajectory from posture CSV files:</p><p>&gt;&gt;Script_OpenField</p><p>Save .mat file for further analysis [ <b>This requires snapshots from each video</b>]</p><p>&gt;&gt;OpenFieldfromDLC</p><p>Load .mat file in workspace and:</p><p>&gt;&gt;Plot_Experiment</p><p>PLOT BOXPLOTS TO COMPARE CONDITIONS from .mat FILES</p><p>&gt;&gt;ShowOpenFieldFeatures</p><h2>2- Gait Analysis<a name="3"></a></h2><p>&gt;&gt;</p><h2>3- AIMs<a name="4"></a></h2><h2>END<a name="5"></a></h2><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2015a</a><br></p></div><!--
+  </style></head><body><div class="content"><h1>USER GUIDE</h1><!--introduction--><p>Run these scripts to measure behavior after analyzing videos in DeepLabCut for:</p><p><b><tt>BEFORE ANYTHING</tt></b>, import functions:</p><p>&gt;&gt;Import_Scripts</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">1- Circular Open Field</a></li><li><a href="#2">2- Gait Analysis</a></li><li><a href="#3">3- AIMs</a></li></ul></div><h2>1- Circular Open Field<a name="1"></a></h2><p>Visualizes Centroid Trajectory from posture CSV files:</p><p>&gt;&gt;Script_OpenField</p><p>Save .mat file for further analysis [ <b>This requires snapshots from each video</b>]</p><p>&gt;&gt;OpenFieldfromDLC</p><p>Load .mat file in workspace and:</p><p>&gt;&gt;Plot_Experiment</p><p>PLOT BOXPLOTS TO COMPARE CONDITIONS from .mat FILES</p><p>&gt;&gt;ShowOpenFieldFeatures</p><h2>2- Gait Analysis<a name="2"></a></h2><p>Run the script and:</p><p>&gt;&gt;GaitAnalysis</p><p>1)Enter CSV from DCL 2)Enter Snapshot from video and set dimensions 3)Enter References of sizes See help in the Command Window</p><h2>3- AIMs<a name="3"></a></h2><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2015a</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 %% USER GUIDE
 % Run these scripts to measure behavior 
 % after analyzing videos in DeepLabCut for:
-% 1- Circular Open Field 
-% 2- Gait Analysis
-% 3- AIMs
-%% 0- Import functions
+% 
+% *|BEFORE ANYTHING|*, import functions: 
 % 
 % >>Import_Scripts
 % 
@@ -98,9 +96,17 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 % >>ShowOpenFieldFeatures
 % 
 %% 2- Gait Analysis
-% >>
+% 
+% Run the script and:
+% 
+% >>GaitAnalysis
+% 
+% 1)Enter CSV from DCL
+% 2)Enter Snapshot from video and set dimensions
+% 3)Enter References of sizes
+% See help in the Command Window
+% 
 %% 3- AIMs
 % 
-%%                                                              END
 ##### SOURCE END #####
 --></body></html>
