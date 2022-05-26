@@ -161,9 +161,10 @@ dBD=get_distance([CornerB;CornerD]);
 xLen=max([dAB(end),dCD(end)]);
 yLen=max([dAC(end),dBD(end)]);
 ncro=1;
+naux=1; % auxiliar counter: increase each Crossing and Direction change
 for n=1:numel(CrossingTimes) % Loop for crossing times
     SignDir=[]; % Change of Direction Detector
-    naux=1; % auxiliar counter: increase each Crossing and Direction change
+    % naux=1; % auxiliar counter: increase each Crossing and Direction change
     % Make Figure
     figure('Name',['Mouse Crossing n=',num2str(n)],'NumberTitle','off')
     Ax{n}=subplot(1,1,1);
@@ -452,20 +453,21 @@ for n=1:numel(CrossingTimes) % Loop for crossing times
                 Ml2rindex=[Ml2rindex,0];
             end
             drawnow;
-            pause(0.01);
+            pause(0.001);
         end
     end
-    DirChanages=find(diff(SignDir)~=0);
-    Inters=[1;DirChanages;numel(SignDir)];
-    A=1;
-    for j=2:numel(Inters)
-        B=Inters(j);
+%     DirChanages=find(diff(SignDir)~=0);
+%     Inters=[1;DirChanages;numel(SignDir)];
+%     A=1;
+%     for j=2:numel(Inters)
+%         B=Inters(j);
         % Path
-        Path{naux}=CenterXY(iok(A:B));
-        % Steps
-        A=B+1;
+        %Path{naux}=CenterXY(iok(A:B),:);
+        Path{naux}=CenterXY;
+%         % Steps
+%         A=B+1;
         naux=naux+1;
-    end
+%     end
     % STEPS ANLAYSIS ##################################
     if and(sum(Ml2rindex)>0,sum(Mr2lindex)>0)
         % [STPS,KS]=getsetpmagic(Ml2rindex,Mr2lindex,L2Rstride,R2Lstride);
@@ -483,7 +485,7 @@ for n=1:numel(CrossingTimes) % Loop for crossing times
         TableData=[TableData;T];
         ncro=ncro+1;
 %         if 1==1
-            pause;
+%             pause;
 %         end
     else
         fprintf('\nNo STEPs detected\n')
@@ -524,6 +526,13 @@ else
     writetable(TableData,[FileDirSave,NameOK{1},'.csv']);
     disp('SAVED')
 end
+
+%% Zi Zgag Analysis
+[BalanceVariance,XDistance,Nzigzags]=zigpaths(Path,A1,C1,cmSlahpisx);
+Tzigzag = table(BalanceVariance',XDistance',Nzigzags');
+Tzigzag.Properties.VariableNames={'BalanceVariance_CM','TrajectoryDistance_CM','Nzigzags'};
+fprintf('\n')
+disp(Tzigzag)
 
 %% Pixel to CM
 % BRIDGEMEASURE; % loads cm @ BridgeWidth var
