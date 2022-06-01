@@ -18,7 +18,7 @@ fprintf('done.\n')
 
 %% Read TailBase - Nose Axis
 fprintf('>Reading data:')
-% Samples with acceptable likelihood of detectino
+% Samples with acceptable likelihood of detecting
 OkDet=intersect(find(GaitTable.TailBaseL>=LikelihoodThreshold),...
         find(GaitTable.NoseL>=LikelihoodThreshold));
 TailXY=[GaitTable.TailBaseX(OkDet),GaitTable.TailBaseY(OkDet)];
@@ -527,12 +527,34 @@ else
     disp('SAVED')
 end
 
-%% Zi Zgag Analysis
-[BalanceVariance,XDistance,Nzigzags]=zigpaths(Path,A1,C1,cmSlahpisx);
-Tzigzag = table(BalanceVariance',XDistance',Nzigzags');
-Tzigzag.Properties.VariableNames={'BalanceVariance_CM','TrajectoryDistance_CM','Nzigzags'};
+%% ZigZgag Analysis
+[BalanceVariance,XDistance,Nzigzags,VelProm]=zigpaths(Path,A1,C1,cmSlahpisx,fs);
+Tzigzag = table(BalanceVariance',XDistance',Nzigzags',VelProm');
+Tzigzag.Properties.VariableNames={'BalanceVariance_CM','TrajectoryDistance_CM','Nzigzags','VelPromCMperSEC'};
 fprintf('\n')
 disp(Tzigzag)
+
+%% Savet MAT file
+if isempty(NameOK )
+    NameOK = inputdlg('Save vriable in .mat file: ','Press OK to save; CANCEL to discard', [1 75], {NameOut(1:DotIndex-1)});
+end
+
+if isempty(NameOK )
+    disp('> DISCARDED .MAT FILE ')
+else
+    fprintf('\n>Saving ...\n')
+    NameFolder='Processed_Gaits';
+    FileDirSave=[CurDir(1:eslaches(end)),NameFolder,filesep];
+    fprintf('> SAVE at ')
+    if ~isdir([FileDirSave])
+        fprintf('created ');
+        mkdir(FileDirSave);
+    end
+    fprintf('\n%s\n',FileDirSave);
+    fprintf('\n%s\n',NameOK{1});
+    save([FileDirSave,NameOK{1}]);
+    disp('SAVED')
+end
 
 %% Pixel to CM
 % BRIDGEMEASURE; % loads cm @ BridgeWidth var
