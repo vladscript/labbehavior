@@ -14,6 +14,7 @@ if N-Nbin*Nws>0
     drate=zeros(Nbin+1,1);
 else
     drate=zeros(Nbin,1);
+    lastwin=0;
 end 
 A=1;
 B=Nws;
