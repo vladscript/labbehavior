@@ -10,8 +10,8 @@ function [CM,IndxColor]=Color_Selector(NamesCond)
 Nconditions=numel(NamesCond);
 % Setting Colors
 % See CBREWER function's Help
-KindMap='qual';
-ColorMapName='Set1';
+KindMap='seq';
+ColorMapName='PuRd';
 Ncolors=9;
 % SAME AS in: 
 % ...\intelAIMs

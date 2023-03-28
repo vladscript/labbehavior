@@ -65,6 +65,18 @@ Detection example:
 
 LINK
 
+### Object Location Memory (OLM)
+
+Training error:
+
+Validation error:
+
+Detection example:
+
+![Setup](/Figures/Gait_Mice.png "Gait Patterns")
+
+LINK
+
 ### AIMs (box)
 
 Training error:
@@ -92,3 +104,7 @@ LINK
 3. Save snapshots for each video (in case of Open Field & Gait)
 
 4. Run Scripts and follow [**this**](http://htmlpreview.github.io/?https://github.com/vladscript/labbehavior/blob/master/html/USER_GUIDE.html)
+
+### Third Party Code
+
+Alejandro Weinstein (2023). Distance from a point to polygon (https://www.mathworks.com/matlabcentral/fileexchange/19398-distance-from-a-point-to-polygon), MATLAB Central File Exchange. Retrieved March 23, 2023.

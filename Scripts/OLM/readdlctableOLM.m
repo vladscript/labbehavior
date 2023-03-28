@@ -1,4 +1,4 @@
-% function Xtable = importfile(filename, dataLines)
+function Xtable = readdlctableOLM(filename, dataLines)
 
 %% IMPORTFILE Import data from a text file
 %  R1RUBISCRRDLCMOBNET100OLM = IMPORTFILE(FILENAME) reads data from text
@@ -100,6 +100,6 @@ opts.ExtraColumnsRule = "ignore";
 opts.EmptyLineRule = "read";
 
 % Import the data
-R1RubiScrrDLCmobnet100OLM = readtable(filename, opts);
+Xtable = readtable(filename, opts);
 
 % end
