@@ -31,8 +31,8 @@ KindMap='seq';
 ColorMapName='PuRd';
 
 % Make Animation of Distances
-makeanimation=false; % visualizar
-savebool=false; % guardar .avi de animación
+makeanimation=true; % visualizar
+savebool=true; % guardar .avi de animación
 
 % that's all ###################################
 [TotalFrames,COLS]=size(X);

@@ -43,7 +43,7 @@ line2A=plot(ax1,[0,mean(pgonA.Vertices(:,1))],[0,mean(pgonA.Vertices(:,2))],'Col
 line2B=plot(ax1,[0,mean(pgonB.Vertices(:,1))],[0,mean(pgonB.Vertices(:,2))],'Color','green','LineWidth',2);
 % line2A.Visible='off';
 % line2B.Visible='off';
-axis(ax1,[leftLim(1),rightLim(1),topLim(2),bottomLim(2)]);
+axis(ax1,[rightLim(1),leftLim(1),topLim(2),bottomLim(2)]);
 tailxy=plot(Xnose(1),Ynose(1));
 drawnow;
 
