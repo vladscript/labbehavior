@@ -88,12 +88,12 @@ bottomLim=[Xdow,Ydow];
 
 % % Detection of axis: since there is confussion between points, we obtained
 % % the three modes in X- and Y-axis
-% xvals=[xrig;xlef;xtop;xdow];
-% [px,binx]=ksdensity(xvals,linspace(min(xvals),max(xvals),100),'Function','pdf');
+xvals=[xrig;xlef;xtop;xdow];
+[px,binx]=ksdensity(xvals,linspace(min(xvals),max(xvals),100),'Function','pdf');
 % [~,posX]=findpeaks(px,binx,'SortStr','descend');
 % 
-% yvals=[yrig;ylef;ytop;ydow];
-% [py,biny]=ksdensity(yvals,linspace(min(yvals),max(yvals),100),'Function','pdf');
+yvals=[yrig;ylef;ytop;ydow];
+[py,biny]=ksdensity(yvals,linspace(min(yvals),max(yvals),100),'Function','pdf');
 % [~,posY]=findpeaks(py,biny,'SortStr','descend');
 % 
 % if and(numel(posX)==numel(posY),numel(posY)==3)
