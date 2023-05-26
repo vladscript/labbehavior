@@ -1,15 +1,21 @@
 %% load data
-
+% read csv from deeplabcut
 [file,selpath]=uigetfile('*.csv')
 X=readdlctableOLM([selpath,file]);
 
 %% SETUP 
-% Size of the Field
+
+% Minimum distance to objects to consider an interaction:
+Dclose=1;               % cm
+% Likelihood Threshold for DLC detections
+LikeliTh=0.9;
+% Seconds to measure velocity
+ws=1;           % s
+
+% Size of the Field (FIXED)
 VerticalLenght=30;      % cm
 HorizontalLenght=30;    % cm
 
-% Minimum distance to objecto to consider it interaction:
-Dclose=1;               % cm
 
 % Acquisition rate
 fps=30;                 % Hz: dafult frames per second (user input)
@@ -23,40 +29,35 @@ while isempty(answer)
 end
 fps= str2double(answer{1});
 
-% Grid size for heatmap
-gridx=3;    % cm
-gridy=3;    % cm
-% Color map for heatmap (google CBREWER for more):
-KindMap='seq';
-ColorMapName='PuRd';
+% % Grid size for heatmap
+% gridx=3;    % cm
+% gridy=3;    % cm
+% % Color map for heatmap (google CBREWER for more):
+% KindMap='seq';
+% ColorMapName='PuRd';
 
-% Make Animation of Distances
-makeanimation=true; % visualizar
-savebool=true; % guardar .avi de animación
+% % Make Animation of Distances
+% makeanimation=true; % visualizar
+% savebool=true; % guardar .avi de animación
 
 % that's all ###################################
 [TotalFrames,COLS]=size(X);
 Nparts=round((COLS-1)/3);
-LikeliTh=0.9;
+
 OkIndx= find(X.nosel>=LikeliTh);
 DiscarFrames=TotalFrames -   numel(OkIndx);
-fprintf('>%s  \n>Nose likelihood threshold: %3.3f \n> %i discarded frames',file,LikeliTh,DiscarFrames)
+PrcDiscFrames=100*(DiscarFrames/TotalFrames);
+fprintf('>%s  \n>Nose likelihood threshold: %3.3f \n> %i discarded frames: %3.1f %% of the video.',file,LikeliTh,DiscarFrames,PrcDiscFrames)
+
 %% Nose Coordinates
+fprintf('\n>Reading nose coordinates:')
 tnose=X.FRAME(OkIndx);
 Xnose=X.nosex(OkIndx);
 Ynose=X.nosey(OkIndx);
-%% Other parts
-
-% xlatleft=X.lateralleftx(X.lateralleftl>LikeliTh);
-% ylatleft=X.laterallefty(X.lateralleftl>LikeliTh);
-% 
-% xlatright=X.lateralrightx(X.lateralrightl>LikeliTh);
-% ylatright=X.lateralrighty(X.lateralrightl>LikeliTh);
-% 
-% xcen=X.centerx(X.centerl>LikeliTh);
-% ycen=X.centery(X.centerl>LikeliTh);
+fprintf(' ready.\n')
 
 %% Field Area:
+% LikeliTh=0.96
 % Get the most likely coordinates
 
 xtop=X.topx(X.topl>LikeliTh);
@@ -88,12 +89,18 @@ bottomLim=[Xdow,Ydow];
 
 % % Detection of axis: since there is confussion between points, we obtained
 % % the three modes in X- and Y-axis
-xvals=[xrig;xlef;xtop;xdow];
-[px,binx]=ksdensity(xvals,linspace(min(xvals),max(xvals),100),'Function','pdf');
+% xvals=[xrig;xlef;xtop;xdow];
+[pxr,binxr]=ksdensity(xrig,linspace(min(xrig),max(xrig),100),'Function','pdf');
+[pxl,binxl]=ksdensity(xlef,linspace(min(xlef),max(xlef),100),'Function','pdf');
+[pxt,binxt]=ksdensity(xtop,linspace(min(xtop),max(xtop),100),'Function','pdf');
+[pxd,binxd]=ksdensity(xdow,linspace(min(xdow),max(xdow),100),'Function','pdf');
 % [~,posX]=findpeaks(px,binx,'SortStr','descend');
 % 
-yvals=[yrig;ylef;ytop;ydow];
-[py,biny]=ksdensity(yvals,linspace(min(yvals),max(yvals),100),'Function','pdf');
+% yvals=[yrig;ylef;ytop;ydow];
+[pyr,binyr]=ksdensity(yrig,linspace(min(yrig),max(yrig),100),'Function','pdf');
+[pyl,binyl]=ksdensity(ylef,linspace(min(ylef),max(ylef),100),'Function','pdf');
+[pyt,binyt]=ksdensity(ytop,linspace(min(ytop),max(ytop),100),'Function','pdf');
+[pyd,binyd]=ksdensity(ydow,linspace(min(ydow),max(ydow),100),'Function','pdf');
 % [~,posY]=findpeaks(py,biny,'SortStr','descend');
 % 
 % if and(numel(posX)==numel(posY),numel(posY)==3)
@@ -112,12 +119,13 @@ yvals=[yrig;ylef;ytop;ydow];
 % end
 
 figure;
-ax1=subplot(3,3,[2,3,5,6]);
-plot(xtop,ytop,'Color',[0.9 0.9 0.9])
+ax1=subplot(3,3,[2,3,5,6]);         % FIELD
+plot(xtop,ytop,'Color',[0.9 0.5 0.5]) % top 
 hold on
-plot(xrig,yrig,'Color',[0.9 0.9 0.9])
-plot(xlef,ylef,'Color',[0.9 0.9 0.9])
-plot(xdow,ydow,'Color',[0.9 0.9 0.9])
+plot(xrig,yrig,'Color',[0.9 0.9 0.5]) % right
+plot(xlef,ylef,'Color',[0.9 0.9 0.25]) % left
+plot(xdow,ydow,'Color',[0.9 0.5 0.1]) % bottom
+
 plot(rightLim(1),rightLim(2),'+','MarkerSize',10,'Color','k','LineWidth',3)
 plot(leftLim(1),leftLim(2),'+','MarkerSize',10,'Color','k','LineWidth',3)
 plot(topLim(1),topLim(2),'+','MarkerSize',10,'Color','k','LineWidth',3)
@@ -125,14 +133,20 @@ plot(bottomLim(1),bottomLim(2),'+','MarkerSize',10,'Color','k','LineWidth',3)
 grid on;
 A1=gca;
 ax2=subplot(3,3,[8,9]);
-plot(binx,px);
-title('Area limits @x')
+plot(binxt,pxt,'Color',[0.9 0.5 0.5]); hold on
+plot(binxr,pxr,'Color',[0.9 0.9 0.5]); 
+plot(binxl,pxl,'Color',[0.9 0.9 0.25]);
+plot(binxd,pxd,'Color',[0.9 0.5 0.1]); hold off
+title('Detection Modes @x')
 axis tight
 grid on
 A2=gca;
 ax3=subplot(3,3,[1,4]);
-plot(py,biny)
-title('Area limits @y')
+plot(pyl,binyl,'Color',[0.9 0.9 0.25]); hold on
+plot(pyt,binyt,'Color',[0.9 0.5 0.5]); 
+plot(pyd,binyd,'Color',[0.9 0.5 0.1]);
+plot(pyr,binyr,'Color',[0.9 0.9 0.5]); hold off
+title('Detection Modes @y')
 axis tight
 grid on
 ax3.YLim=ax1.YLim;
@@ -152,14 +166,12 @@ yratio=VerticalLenght/VertDistance; % [cm/px]
 xratio=HorizontalLenght/HorrtDistance; % [cm/px]
 
 %% OBJECTS
-
+% LikeliTh=0.6
 % Object a
 xoa1=X.oa1x(X.oa1l>LikeliTh);
 yoa1=X.oa1y(X.oa1l>LikeliTh);
 xoa2=X.oa2x(X.oa2l>LikeliTh);
 yoa2=X.oa2y(X.oa2l>LikeliTh);
-xoa3=X.oa3x(X.oa3l>LikeliTh);
-yoa3=X.oa3y(X.oa3l>LikeliTh);
 xoa3=X.oa3x(X.oa3l>LikeliTh);
 yoa3=X.oa3y(X.oa3l>LikeliTh);
 xoa4=X.oa4x(X.oa4l>LikeliTh);
@@ -201,22 +213,51 @@ pgonB = polyshape([Xob1,Xob2,Xob3,Xob4],[Yob1,Yob2,Yob3,Yob4]);
 plot(ax1,pgonB,'FaceColor','green','EdgeColor','green')
 
 
+
+% Fix miss-detection of objects:
+
+if or(pgonA.NumRegions>1,pgonA.NumRegions>1)
+    fprintf('\n>Error in Object(s):')
+    if pgonA.NumRegions>1
+        fprintf('A')
+        okA=find(sum([X.oa1l>LikeliTh, X.oa2l>LikeliTh,X.oa3l>LikeliTh,X.oa4l>LikeliTh],2)==4);
+        xoa1=X.oa1x(okA);
+        yoa1=X.oa1y(okA);
+        xoa2=X.oa2x(okA);
+        yoa2=X.oa2y(okA);
+        xoa3=X.oa3x(okA);
+        yoa3=X.oa3y(okA);
+        xoa4=X.oa4x(okA);
+        yoa4=X.oa4y(okA);
+        pgonA=rectangleobject(xoa1,yoa1,xoa2,yoa2,xoa3,yoa3,xoa4,yoa4);
+    else
+        fprintf('B')
+        okB=find(sum([X.ob1l>LikeliTh, X.ob2l>LikeliTh,X.ob3l>LikeliTh,X.ob4l>LikeliTh],2)==4);
+        xob1=X.ob1x(okB);
+        yob1=X.ob1y(okB);
+        xob2=X.ob2x(okB);
+        yob2=X.ob2y(okB);
+        xob3=X.ob3x(okB);
+        yob3=X.ob3y(okB);
+        xob4=X.ob4x(okB);
+        yob4=X.ob4y(okB);
+        pgonB=rectangleobject(xob1,yob1,xob2,yob2,xob3,yob3,xob4,yob4);
+    end
+end
+
 PA=polygonperimeter(pgonA,xratio,yratio);
 PB=polygonperimeter(pgonB,xratio,yratio);
 
 fprintf('>>Perimeters: of:\n>Object A: %3.2f px -> %3.2f cm \n>Object B: %3.2f px -> %3.2f cm \n',pgonA.perimeter,PA,pgonB.perimeter,PB);
 
-%% 
-% Nose tracking
-plot(ax1,Xnose,Ynose,'Color',[0.42 0.35 0.2])
-legend(ax1,'','','','','','','','','A','B','Nose')
-% Other parts:
-% Center
-% plot(ax1,xcen,ycen)
-% plot(ax1,xlatleft,ylatleft)
-% plot(ax1,xlatright,ylatright)
-ax1.YLim=sort([topLim(2),bottomLim(2)]);
-ax1.XLim=sort([leftLim(1),rightLim(1)]);
+%%
+%% OLM heatmap
+% Grid size for heatmap
+gridx=3;    % cm
+gridy=3;    % cm
+% Color map for heatmap (google CBREWER for more):
+KindMap='seq';
+ColorMapName='PuRd';
 
 %% Colormap Exploratory
 
@@ -251,6 +292,21 @@ AxB.XTickLabel=ctrs{1}(AxB.XTick);
 pgonApix=pgonA;
 pgonBpix=pgonB;
 DeltaX=ctrs{1}(end)-ctrs{1}(1);
+
+
+%% 
+% Nose tracking
+plot(ax1,Xnose,Ynose,'Color',[0.42 0.35 0.2])
+legend(ax1,'','','','','','','','','A','B','Nose')
+% Other parts:
+% Center
+% plot(ax1,xcen,ycen)
+% plot(ax1,xlatleft,ylatleft)
+% plot(ax1,xlatright,ylatright)
+ax1.YLim=sort([topLim(2),bottomLim(2)]);
+ax1.XLim=sort([leftLim(1),rightLim(1)]);
+
+
 DeltaY=ctrs{2}(end)-ctrs{2}(1);
 % DeltaXpx=AxB.XLim(end)-AxB.XLim(1);
 % DeltaYpx=AxB.YLim(end)-AxB.YLim(1);
@@ -279,16 +335,7 @@ ylabel('[px]')
 xlabel('[px]')
 title(sprintf('Grid Size: x=%i cm, y=%i cm Colorbar: [s]',gridx,gridy))
 
-%% blur version (experimental)
-% ww=4;
-% kernel=ones(ww)/ww^2;
-% b_N=imfilter(N,kernel);
-% figure; imagesc(b_N')
-% colormap(CM)
-% hold on
-% plot(pgonApix,'FaceColor','blue')
-% plot(pgonBpix,'FaceColor','green')
-% colorbar
+
 %% Distance from Nose to Objects
 Npoints=numel(Xnose);
 
@@ -324,14 +371,10 @@ fprintf('>Total Interaction (<%i cm)with A and B objects: %3.2f seconds',Dclose,
 fprintf('\n>A object: %3.2f %%',prefA);
 fprintf('\n>B object: %3.2f %%\n',prefB);
 
-%% Animation
-if makeanimation
-    animatedistance(pgonA,pgonB,Xnose,Ynose,topLim,bottomLim,rightLim,leftLim,fps,savebool);
-end
 
 %% Motor stuff
 
-ws=1;           % s
+
 % velthres=20;    % cm/s
 
 
@@ -389,3 +432,4 @@ Rtable.Properties.VariableNames={'MinimumDistance_cm',...
 fprintf('\n@ %s\n',FileOutput);
 writetable(Rtable,[FileOutput,Name])
 disp(Rtable);
+% 
