@@ -141,9 +141,15 @@ fprintf('>>Area diameters: of:\n>Vertical: %3.2f px \n>Horizontal: %3.2f px\n',V
 yratio=VerticalLenght/VertDistance; % [cm/px]
 xratio=HorizontalLenght/HorrtDistance; % [cm/px]
 
-%% OBJECTS
-fprintf('\nA')
-okA=find(sum([X.oa1l>LikeliTh, X.oa2l>LikeliTh,X.oa3l>LikeliTh,X.oa4l>LikeliTh],2)==4);
+%% OBJECTS A & B
+
+CenterArea=mean([leftLim;rightLim; topLim;bottomLim]);
+Cx=CenterArea(1);
+
+fprintf('\n Searching Object A [left]')
+okL=find(sum([X.oa1l>LikeliTh, X.oa2l>LikeliTh,X.oa3l>LikeliTh,X.oa4l>LikeliTh],2)==4);
+okCx=find(sum([X.oa1x<Cx, X.oa2x<Cx, X.oa3x<Cx, X.oa4x<Cx],2)==4);
+okA=intersect(okL, okCx);
 xoa1=X.oa1x(okA);
 yoa1=X.oa1y(okA);
 xoa2=X.oa2x(okA);
@@ -154,8 +160,10 @@ xoa4=X.oa4x(okA);
 yoa4=X.oa4y(okA);
 pgonA=rectangleobject(xoa1,yoa1,xoa2,yoa2,xoa3,yoa3,xoa4,yoa4);
 fprintf('\n')
-fprintf('\nB')
-okB=find(sum([X.ob1l>LikeliTh, X.ob2l>LikeliTh,X.ob3l>LikeliTh,X.ob4l>LikeliTh],2)==4);
+fprintf('\nSearching Object B [right]')
+okL=find(sum([X.ob1l>LikeliTh, X.ob2l>LikeliTh,X.ob3l>LikeliTh,X.ob4l>LikeliTh],2)==4);
+okCx=find(sum([X.ob1x>Cx, X.ob2x>Cx, X.ob3x>Cx, X.ob4x>Cx],2)==4);
+okB=intersect(okL, okCx);
 xob1=X.ob1x(okB);
 yob1=X.ob1y(okB);
 xob2=X.ob2x(okB);
