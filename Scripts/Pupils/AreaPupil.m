@@ -1,3 +1,9 @@
+%% TO DO
+
+% 1) Multiple Files
+% 2) Plots of A and save Threshold and Likelihoods
+% 3) decide if Area or  Length between lines among the eye
+
 %% AREAPUPIL
 [file,selpath]=uigetfile('*.csv')
 dataXY = importxypupil([selpath,file]);

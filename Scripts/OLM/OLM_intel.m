@@ -1,3 +1,6 @@
+%% To do
+% 1) Update negative distance/above objcet as Non-Interacton
+
 %% load data
 % read csv from deeplabcut
 clear;
@@ -217,8 +220,8 @@ pgonBpix=pgonB;
 DeltaX=ctrs{1}(end)-ctrs{1}(1);
 
 
-%% 
-% Nose tracking
+%% NOSE TRACKING
+
 plot(ax1,Xnose,Ynose,'Color',[0.42 0.35 0.2])
 legend(ax1,'','','','','','','','','A','B','Nose')
 % Other parts:
@@ -260,6 +263,13 @@ title(sprintf('Grid Size: x=%i cm, y=%i cm Colorbar: [s]',gridx,gridy))
 
 
 %% Distance from Nose to Objects
+
+% % AUTOMATIC THRESHOLD **********************
+% % dCloseB=OLMinteraction(dB);
+% % dCloseA=OLMinteraction(dA);
+% % Dclose=mean([dCloseA,dCloseB]);
+% % ******************************************
+
 Npoints=numel(Xnose);
 
 fprintf('\n>Measuring distances: .')
@@ -271,36 +281,75 @@ for i=1:Npoints
     %plot(x,y,'ko')
 end
 fprintf('.. done.')
-fprintf('\n>Minimum distance to Object A: %3.2f cm\n',min(dA));
-fprintf('>Minimum distance to Object B: %3.2f cm\n',min(dB));
-fprintf('~Negative distance means overlapping~\n');
+fprintf('~Negative distance means overlapping -> discarding frames:\n');
+OLa=overlapobjectframes(dA,Dclose);
+OLb=overlapobjectframes(dB,Dclose);
 
+NoverA=size(OLa,1);
+NoverB=size(OLb,1);
+
+% Discarded overlapping frames
+disA=[]; tdisA=0;
+for n=1:NoverA
+    disA=[disA,OLa(n,1):OLa(n,2)];
+    tdisA=tdisA+OLa(n,3);
+end
+
+disB=[]; tdisB=0;
+for n=1:NoverB
+    disB=[disB,OLb(n,1):OLb(n,2)];
+    tdisB=tdisB+OLb(n,3);
+end
+
+
+% N Interactions
+% Continuous intervasl under threshold:
+IA=interactobjectframes(dA,Dclose);
+IB=interactobjectframes(dB,Dclose);
+
+NinterA=size(IA,1)-NoverA;
+NinterB=size(IB,1)-NoverB;
+
+% PLOT ******************
 figure
 % axa1=subplot(111);
-plot(dA,'Color','blue'); hold on
-plot(dB,'Color','green')
-plot([0,Npoints],[Dclose Dclose],'Color','red')
-legend('Object A','Object B',sprintf('%i cm threshold',Dclose),'Orientation','horizontal','Location','northoutside');
+plot(dA,'Color','blue','LineWidth',2); hold on
+plot(dB,'Color','green','LineWidth',2)
+plot([0,Npoints],[Dclose Dclose],'Color','red','Marker','*')
+L = legend('Object A','Object B',sprintf('%2.2f cm threshold',Dclose),'Orientation','horizontal','Location','northoutside');
+L.AutoUpdate='off';
+plot([0,Npoints],[0 0],'Color','red','Marker','*')
 title(' Distance Nose to:')
 ylabel('cm');
 xlabel('frames');
 axis tight; grid on;
+% Discarded overlapping frames
+for n=1:NoverA
+    plot(OLa(n,1):OLa(n,2),dA(OLa(n,1):OLa(n,2)),'.k')
+end
+for n=1:NoverB
+    plot(OLb(n,1):OLb(n,2),dB(OLb(n,1):OLb(n,2)),'.k')
+end
+% Interactions
+
+
 drawnow;
+%  CALCULATIONS **************************
+interA=setdiff(find(dA<Dclose),disA);
+interB=setdiff(find(dB<Dclose),disB);
+TotalInter=numel(interA)+numel(interB);
 
-TotalInter=sum(dA<Dclose)+sum(dB<Dclose);
-
-prefA=sum(dA<=Dclose)/(sum(dA<Dclose)+sum(dB<Dclose))*100;
-prefB=sum(dB<=Dclose)/(sum(dA<Dclose)+sum(dB<Dclose))*100;
-fprintf('>Total Interaction (<%i cm)with A and B objects: %3.2f seconds',Dclose,TotalInter/fps);
+prefA=numel(interA)/(TotalInter)*100;
+prefB=numel(interB)/(TotalInter)*100;
+fprintf('>Total Interaction (<%2.1f cm)with A and B objects: %3.2f seconds',Dclose,TotalInter/fps);
 fprintf('\n>A object: %3.2f %%',prefA);
 fprintf('\n>B object: %3.2f %%\n',prefB);
-
+fprintf('\n>Minimum interaction-distance to Object A: %3.2f cm\n',min(dA(interA)));
+fprintf('>Minimum interaction-distance to Object B: %3.2f cm\n',min(dB(interB)));
 
 %% Motor stuff
 
-
 % velthres=20;    % cm/s
-
 
 % Total Distance %statistics: mean, 
 t=X.FRAME(OkIndx)*(1/fps); % TIME IN SECONDS
@@ -338,7 +387,7 @@ plot([0,TIMES(end)],[velthres,velthres],'--r')
 % ws=1; % seconds
 % drate=get_velocity_interval(d,ws,fps);
 
-%% Generate OUPUT
+%% Generate OUTPUT
 
 fprintf('\n>Saving table: ')
 FileOutput=getDir2Save();
@@ -351,14 +400,18 @@ Name=[file(1:indxmark-1),'_OLMintel.csv'];
 
 fprintf('%s',Name);
 
-Rtable=table(VidID,Dclose,TotalInter/fps,prefA,prefB,TotalDistance,ws,...
+Rtable=table(VidID,Dclose, ...
+    TotalInter/fps,prefA,prefB, ...
+    NinterA,NinterB,numel(disA)/fps,numel(disB)/fps,NoverA,NoverB,...
+    TotalDistance,ws,...
     median(drate),numel(TIMES),median(AMP),TotalFrames/fps,...
     yratio,xratio,PA,PB,PrcDiscFrames);
 
-Rtable.Properties.VariableNames={'Video_ID','MinimumDistance_cm',...
-        'TotaTimeInteraction_s','A_percent','B_percent','TotalDistance_cm'...
-        'WindowTime_s','MedianVelocityWindow_cm_s','Bouts_N','medianVelocityBout_cm_s','VideoLength_s',...
-        'yratio_cm_px','xratio_cmp_px','A_perimeter_cm','B_perimeter_cm','Frames_Discarded_PCENT'};
+Rtable.Properties.VariableNames={'Video_ID','Threshold_cm',...
+        'TotaTimeInter_s','A_percent','B_percent',...
+        'N_inter_A','N_inter_B','OverlapA_s','OverlapB_s','N_over_A','N_over_B',...
+        'TotalDistance_cm','WindowTime_s','MedianVelWin_cm_s','N_Bouts','MedianVelBout_cm_s','VideoLength_s',...
+        'yratio_cm_px','xratio_cmp_px','A_perimeter_cm','B_perimeter_cm','Frames_Discardesd_percent'};
 
 fprintf('\n@ %s\n',FileOutput);
 writetable(Rtable,[FileOutput,Name])
