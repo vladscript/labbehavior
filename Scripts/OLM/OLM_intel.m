@@ -1,5 +1,5 @@
 %% To do
-% 1) Update negative distance/above objcet as Non-Interacton
+% 1) Make colormap only for neighbouhood of the objects
 
 %% load data
 % read csv from deeplabcut
@@ -288,17 +288,22 @@ OLb=overlapobjectframes(dB,Dclose);
 NoverA=size(OLa,1);
 NoverB=size(OLb,1);
 
+
 % Discarded overlapping frames
 disA=[]; tdisA=0;
-for n=1:NoverA
-    disA=[disA,OLa(n,1):OLa(n,2)];
-    tdisA=tdisA+OLa(n,3);
+if NoverA>0
+    for n=1:NoverA
+        disA=[disA,OLa(n,1):OLa(n,2)];
+        tdisA=tdisA+OLa(n,3);
+    end
 end
 
 disB=[]; tdisB=0;
-for n=1:NoverB
-    disB=[disB,OLb(n,1):OLb(n,2)];
-    tdisB=tdisB+OLb(n,3);
+if NoverB>0
+    for n=1:NoverB
+        disB=[disB,OLb(n,1):OLb(n,2)];
+        tdisB=tdisB+OLb(n,3);
+    end
 end
 
 
