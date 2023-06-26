@@ -185,7 +185,7 @@ plot(ax1,pgonA,'FaceColor','blue','EdgeColor','blue')
 plot(ax1,pgonB,'FaceColor','green','EdgeColor','green')
 fprintf('>>Perimeters: of:\n>Object A: %3.2f px -> %3.2f cm \n>Object B: %3.2f px -> %3.2f cm \n',pgonA.perimeter,PA,pgonB.perimeter,PB);
 
-%% Colormap Exploratory
+%% Colormap Complete Exploratory
 
 stephstX=round(gridx/xratio);
 stephstY=round(gridy/yratio);
@@ -214,24 +214,9 @@ AxB.XTick=round(linspace(1,size(N,1),Nticks));
 AxB.YTickLabel=ctrs{2}(AxB.YTick);
 AxB.XTickLabel=ctrs{1}(AxB.XTick);
 
-
 pgonApix=pgonA;
 pgonBpix=pgonB;
 DeltaX=ctrs{1}(end)-ctrs{1}(1);
-
-
-%% NOSE TRACKING
-
-plot(ax1,Xnose,Ynose,'Color',[0.42 0.35 0.2])
-legend(ax1,'','','','','','','','','A','B','Nose')
-% Other parts:
-% Center
-% plot(ax1,xcen,ycen)
-% plot(ax1,xlatleft,ylatleft)
-% plot(ax1,xlatright,ylatright)
-ax1.YLim=sort([topLim(2),bottomLim(2)]);
-ax1.XLim=sort([leftLim(1),rightLim(1)]);
-
 
 DeltaY=ctrs{2}(end)-ctrs{2}(1);
 % DeltaXpx=AxB.XLim(end)-AxB.XLim(1);
@@ -259,7 +244,21 @@ colorbar
 % plot(AxB,pgonB)
 ylabel('[px]')
 xlabel('[px]')
-title(sprintf('Grid Size: x=%i cm, y=%i cm Colorbar: [s]',gridx,gridy))
+title(sprintf('Complete CM Grid Size: x=%i cm, y=%i cm Colorbar: [s]',gridx,gridy))
+
+
+%% NOSE TRACKING
+
+plot(ax1,Xnose,Ynose,'Color',[0.42 0.35 0.2])
+legend(ax1,'','','','','','','','','A','B','Nose')
+% Other parts:
+% Center
+% plot(ax1,xcen,ycen)
+% plot(ax1,xlatleft,ylatleft)
+% plot(ax1,xlatright,ylatright)
+ax1.YLim=sort([topLim(2),bottomLim(2)]);
+ax1.XLim=sort([leftLim(1),rightLim(1)]);
+
 
 
 %% Distance from Nose to Objects
@@ -421,3 +420,31 @@ Rtable.Properties.VariableNames={'Video_ID','Threshold_cm',...
 fprintf('\n@ %s\n',FileOutput);
 writetable(Rtable,[FileOutput,Name])
 disp(Rtable);
+%% ColorMap in the Object's Neighbourhood
+DataOLM.dA=dA;
+DataOLM.dB=dB;
+DataOLM.interA=interA;
+DataOLM.interB=interB;
+DataOLM.Xnose=Xnose;
+DataOLM.Ynose=Ynose;
+DataOLM.xratio=xratio;
+DataOLM.yratio=yratio;
+
+Field.leftLim=leftLim;
+Field.rightLim=rightLim;
+Field.topLim=topLim;
+Field.bottomLim=bottomLim;
+Field.pgonA=pgonA;
+Field.pgonB=pgonB;
+Field.fps=fps;
+
+ColorSets.KindMap=KindMap;
+ColorSets.ColorMapName=ColorMapName;
+
+Color_Map_Neighbourhood(Nsize,gridx,gridy,DataOLM,Field,ColorSets);
+
+ssfunc='>>Color_Map_Neighbourhood(Nsize,gridx,gridy,DataOLM,Field,ColorSets);';
+fprintf('For different color maps, run: \n %s\n',ssfunc)
+fprintf('Ony change: \n\nNsise: Neighborhood size in cm\n')
+fprintf('\ngridx: size of grid in x-axis in cm\n')
+fprintf('\ngridy: size of grid in y-axis in cm\n')
