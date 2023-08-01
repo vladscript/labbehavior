@@ -26,4 +26,9 @@ for n=1:N
     FileVideoOut=[FileVid(1:end-4),'_STIMS_vector'];
     save(FileVideoOut,'Index');
     fprintf('\n[saved]\n')
+
+    %% Save
+    fprintf('\n>Sav')
+    save([DirVids,FileVid(1:end-4),'_SCREEN_'],'Index');
+    fprintf('ed\n')
 end
