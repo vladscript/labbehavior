@@ -1,52 +1,123 @@
 %% TO DO
 
-% 1) Multiple Files
 % 2) Plots of A and save Threshold and Likelihoods
 % 3) decide if Area or  Length between lines among the eye
+% 4) Eyes Size; Blinks; Eye Movement
 
-%% AREAPUPIL
-[file,selpath]=uigetfile('*.csv')
-dataXY = importxypupil([selpath,file]);
-LkTh=.6;
-%% Checkin Eye Likelihood
-l1l=dataXY.pupil_top_L;
-l2l=dataXY.pupil_bot_L;
-l3l=dataXY.pupil_left_L;
-l4l=dataXY.pupil_right_L;
-figure; 
-ksdensity(l1l); hold on;
-ksdensity(l2l);
-ksdensity(l3l);
-ksdensity(l4l);  hold off;
-grid on;
-title('Detection likelihood pupil')
-pause(2)
-close gcf
-
-%% Chosing Area Proxy
-N=dataXY.frames(end)+1;
-% Frames for Square
-sQRl=[l1l>LkTh,l2l>LkTh,l3l>LkTh,l4l>LkTh];
-SqrFrames=find(sum(sQRl,2)==4);
-% Frames for Triangle
-tRl=[l2l>LkTh,l3l>LkTh,l4l>LkTh];
-TrFrames=find(sum(tRl,2)==3);
-
-fprintf('\n>Detected Frames %3.2f%% []\n',100*numel(SqrFrames)/N)
-fprintf('\n>Detected Frames %3.2f%% |>\n',100*numel(TrFrames)/N)
-
-%% LOOP
-fprintf('\n>Measuring Area:')
-NframesOK=numel(TrFrames);
-for n=1:NframesOK
-    i=TrFrames(n);
-    f(n)=dataXY.frames(i)+1; % starts @ 0
-    P=polyshape([dataXY.pupil_top_X(i),dataXY.pupil_left_X(i),dataXY.pupil_right_X(i)],[[dataXY.pupil_top_Y(i),dataXY.pupil_left_Y(i),dataXY.pupil_right_Y(i)]]);
-    A(n)=P.area;
+%% READ CSV DATA (Multiple Files)
+% Likelihood input:
+LxThres=inputdlg({'DLC likelihood threshold'},'Set',[1 35],{'0.6'});
+LkTh=str2double(LxThres{1});
+% FILE NAMES: until user gets thems
+indx=0;
+while indx==0
+    [file,selpath,indx]=uigetfile('*.csv','MultiSelect','on');
 end
-fprintf(' complete.\n')
-%% Save
-fprintf('\n>Sav')
-ednindx=strfind(file,'mobnet');
-save([selpath,file(1:ednindx-1),'AREA_PUPIL'],'A','f');
-fprintf('ed\n')
+
+if ~iscell(file)==1
+    fileBuff=file;
+    clear file;
+    file{1}=fileBuff;
+    clear fileBuff;
+end
+Nfiles=numel(file);
+fprintf('\n>Reading %i DLC files and filtering detections with Likelihood=%1.1f',Nfiles,LkTh);
+%% MAIN LOOP
+PupilDots={'top','bottom','left','right'};
+ColNumX=[2,5,11,8];
+ColNumY=ColNumX+1;
+for n=1:Nfiles
+    f=file{n};
+    fprintf('\n >Loading file: %s',f);
+    dataXY = importxypupil([selpath,f]);
+    fprintf('\n loaded.');
+    %% Checkin Eye Likelihood
+    l1l=dataXY.pupil_top_L;
+    l2l=dataXY.pupil_bot_L;
+    l3l=dataXY.pupil_left_L;
+    l4l=dataXY.pupil_right_L;
+    figure; 
+    ax1=subplot(221);
+    histogram(l1l,10); hold on;
+    histogram(l2l,10);
+    histogram(l3l,10);
+    histogram(l4l,10);  hold off;
+    grid on;
+    title('Detection of pupils')
+    ylabel('# frames')
+    xlabel('likelihood')
+    ax1.YScale='log';
+    ax1.XLim=[0 1];
+    legend(PupilDots);
+    %% Chosing Area/Axis as Proxy of Pupil Size
+    N=dataXY.frames(end)+1;
+    % Binary MAtrix of Pupil Detection above likelihood threshold
+    sQRl=[l1l>LkTh,l2l>LkTh,l3l>LkTh,l4l>LkTh];
+    [DotsCombs,PctFrames]=percetnframesok(sQRl);
+    [~,inx]=max(100*PctFrames); % BEST==More Frames
+    for i=1:numel(DotsCombs)
+        fprintf('\n Dots: ')
+        for j=1:numel(DotsCombs{i})
+            fprintf('%s ',PupilDots{DotsCombs{i}(j)});
+        end
+        fprintf('%% frames detected: %3.2f',100*PctFrames(i));
+        if i==inx
+            fprintf('            ***');
+        end
+    end
+    % Chosing best:
+    Dots=DotsCombs{inx};
+    TrFrames=find(sum(sQRl(:,Dots),2)==2);
+    %% LOOP
+    Ndots=numel(Dots);
+    if Ndots>2
+        fprintf('\n>Measuring Area:')
+    else
+        fprintf('\n>Measuring Length:')
+    end
+    % NframesOK=numel(TrFrames);
+    h = waitbar(0,'Getting area/length...');
+    for m=1:N
+        % PUPIL Size
+        xpoints=table2array(dataXY(m,ColNumX(Dots)));
+        ypoints=table2array(dataXY(m,ColNumY(Dots)));
+        if Ndots==4
+            indxsorting=[1,3,2,4]; % to prevente uplicate vertices, intersections, or other inconsistencies 
+            P=polyshape(xpoints(indxsorting),ypoints(indxsorting));
+        elseif Ndots==3
+            P=polyshape(xpoints,ypoints); % TRIANGLES
+            A(m)=P.area;
+        else % AXIS
+            A(m)=twopartsdistance([xpoints(1),ypoints(1)],[xpoints(2),ypoints(2)]);
+        end
+        % EYE Size
+        
+        % Check LIkelihoods!!!
+        if dataXY.lid_top_L(m)>=LkTh+dataXY.corner_right_L(m)>=LkTh+dataXY.lid_bot_L(m)>=LkTh+dataXY.corner_left_L(m)>=LkTh==4
+            Peye(m)=polyshape([dataXY.lid_top_X(m),dataXY.corner_left_X(m),dataXY.lid_bot_X(m),dataXY.corner_right_X(m)],...
+                [dataXY.lid_top_Y(m),dataXY.corner_left_Y(m),dataXY.lid_bot_Y(m),dataXY.corner_right_Y(m)]);
+            Peyearea(m)=Peye.area;
+        else
+            Peyearea(m)=NaN;
+        end
+        % Distance between lid and bot
+        if dataXY.lid_top_L(m)>=LkTh+dataXY.lid_bot_L(m)>=LkTh==2
+            Blink(m)=twopartsdistance([dataXY.lid_top_X(m),dataXY.lid_top_Y(m)],[dataXY.lid_bot_X(m),dataXY.lid_bot_Y(m)]);
+        else
+            Blink(m)=NaN;
+        end
+        % fprintf('\n%3.2f',100*m/N);
+        waitbar(m/N,h);
+    end
+    close(h);
+    FramesOK=dataXY.frames(TrFrames)+1;
+    fprintf(' complete.\n')
+    %% Save
+    fprintf('\n>Sav')
+    DotsName=PupilDots(Dots);
+    ednindx=strfind(f,'mobnet');
+    save([selpath,f(1:ednindx-1),'AREA_PUPIL'],'A','FramesOK','Ndots','LkTh',...
+        'Peyearea','Blink','DotsName');
+    fprintf('ed\n')
+end
+%% END ###################################################################

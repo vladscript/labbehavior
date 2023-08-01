@@ -15,6 +15,8 @@ Dclose=1;               % cm
 LikeliTh=0.9;
 % Seconds to measure velocity
 ws=1;           % s
+% Size of the neighbourhood of the objects:
+Nsize=6;
 
 % Acquisition rate
 fps=30;                 % Hz: dafult frames per second (user input)
