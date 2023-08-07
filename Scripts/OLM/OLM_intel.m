@@ -8,7 +8,7 @@ clear;
 X=readdlctableOLM([selpath,file]);
 
 %% SETUP 
-
+% DEFAULT VALUES
 % Minimum distance to objects to consider an interaction:
 Dclose=1;               % cm
 % Likelihood Threshold for DLC detections
@@ -19,7 +19,7 @@ ws=1;           % s
 Nsize=6;
 
 % Acquisition rate
-fps=30;                 % Hz: dafult frames per second (user input)
+fps=30;                 % Hz: default frames per second (user input)
 prompt={'fps:'};
 name='Rate:';
 numlines=[1 50];
@@ -186,69 +186,6 @@ PB=polygonperimeter(pgonB,xratio,yratio);
 plot(ax1,pgonA,'FaceColor','blue','EdgeColor','blue')
 plot(ax1,pgonB,'FaceColor','green','EdgeColor','green')
 fprintf('>>Perimeters: of:\n>Object A: %3.2f px -> %3.2f cm \n>Object B: %3.2f px -> %3.2f cm \n',pgonA.perimeter,PA,pgonB.perimeter,PB);
-
-%% Colormap Complete Exploratory
-
-stephstX=round(gridx/xratio);
-stephstY=round(gridy/yratio);
-xrange=sort([leftLim(1),rightLim(1)]);
-yrange=sort([topLim(2),bottomLim(2)]);
-ctrs={round(xrange(1)):stephstX:round(xrange(2)) round(yrange(1)):stephstY:round(yrange(2))};
-% x,y
-
-N = hist3([Xnose,Ynose],'Ctrs',ctrs); % FRAMES
-Ncolors=max(N(:));
-N=N/fps; % FRAMES
-figure
-imagesc(N')
-
-
-CM=cbrewer(KindMap,ColorMapName,Ncolors);
-CM(1,:)=[1,1,1];
-colormap(CM)
-AxB=gca;
-AxB.YLim=[1,size(N,2)];
-AxB.XLim=[1,size(N,1)];
-Nticks=5;
-AxB.YTick=round(linspace(1,size(N,2),Nticks));
-AxB.XTick=round(linspace(1,size(N,1),Nticks));
-
-AxB.YTickLabel=ctrs{2}(AxB.YTick);
-AxB.XTickLabel=ctrs{1}(AxB.XTick);
-
-pgonApix=pgonA;
-pgonBpix=pgonB;
-DeltaX=ctrs{1}(end)-ctrs{1}(1);
-
-DeltaY=ctrs{2}(end)-ctrs{2}(1);
-% DeltaXpx=AxB.XLim(end)-AxB.XLim(1);
-% DeltaYpx=AxB.YLim(end)-AxB.YLim(1);
-DeltaXpx=size(N,1);
-DeltaYpx=size(N,2);
-% x->value
-% (x/DeltaX)*DeltaXpx
-
-pgonApix.Vertices(:,1) = DeltaXpx*((pgonA.Vertices(:,1)-ctrs{1}(1))/DeltaX); % x 
-pgonApix.Vertices(:,2) = DeltaYpx*((pgonA.Vertices(:,2)-ctrs{2}(1))/DeltaY); % y
-
-pgonBpix.Vertices(:,1) = DeltaXpx*((pgonB.Vertices(:,1)-ctrs{1}(1))/DeltaX); % x 
-pgonBpix.Vertices(:,2) = DeltaYpx*((pgonB.Vertices(:,2)-ctrs{2}(1))/DeltaY); % y
-
-hold on
-plot(AxB,pgonApix,'FaceColor','blue','EdgeColor','blue')
-plot(AxB,pgonBpix,'FaceColor','green','EdgeColor','green')
-
-% ax1.YLim;=ax1.XLim;
-% AxB.YTick=ax1.YTick;
-% AxB.XTick=ax1.XTick;
-colorbar
-% view(0,-90);
-% plot(AxB,pgonB)
-ylabel('[px]')
-xlabel('[px]')
-title(sprintf('Complete CM Grid Size: x=%i cm, y=%i cm Colorbar: [s]',gridx,gridy))
-
-
 %% NOSE TRACKING
 
 plot(ax1,Xnose,Ynose,'Color',[0.42 0.35 0.2])
@@ -260,8 +197,21 @@ legend(ax1,'','','','','','','','','A','B','Nose')
 % plot(ax1,xlatright,ylatright)
 ax1.YLim=sort([topLim(2),bottomLim(2)]);
 ax1.XLim=sort([leftLim(1),rightLim(1)]);
+%% Colormap Complete Exploratory
 
+TaskData.Xnose=Xnose;
+TaskData.Ynose=Ynose;
+TaskData.xratio=xratio;
+TaskData.yratio=yratio;
+TaskData.leftLim=leftLim;
+TaskData.rightLim=rightLim;
+TaskData.topLim=topLim;
+TaskData.bottomLim=bottomLim;
+TaskData.pgonA=pgonA;
+TaskData.pgonB=pgonB;
+TaskData.fps=fps;
 
+ColorMapOLM(gridx,gridy,KindMap,ColorMapName,TaskData);
 
 %% Distance from Nose to Objects
 
@@ -377,6 +327,7 @@ figure
 bar(tvel,drate)
 ylabel('cm/s');
 xlabel('s')
+title(sprintf('Velocity each %2.1f seconds',ws))
 hold on
 for n=1:numel(AMP)
     plot(TIMES(n),AMP(n),'r*');
