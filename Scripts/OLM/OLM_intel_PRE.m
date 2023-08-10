@@ -6,7 +6,17 @@ X=readdlctableOLM([selpath,file]);
 %% SETUP 
 
 % Minimum distance to objects to consider an interaction:
-Dclose=1;               % cm
+Dclose=2;               % cm        DEFAULT
+prompt={'cm:'};
+name='Interaction Threshold:';
+numlines=1;
+defaultanswer={num2str(Dclose)};
+answer={};
+while isempty(answer)
+    answer=inputdlg(prompt,name,numlines,defaultanswer);
+end
+Dclose= str2double(answer{1});
+
 % Likelihood Threshold for DLC detections
 LikeliTh=0.9;
 % Seconds to measure velocity

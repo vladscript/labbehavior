@@ -394,10 +394,12 @@ Field.fps=fps;
 ColorSets.KindMap=KindMap;
 ColorSets.ColorMapName=ColorMapName;
 
-Color_Map_Neighbourhood(Nsize,gridx,gridy,DataOLM,Field,ColorSets);
+N = Color_Map_Neighbourhood_Seconds_Jet(Nsize,gridx,gridy,DataOLM,Field);
 
-ssfunc='>>Color_Map_Neighbourhood(Nsize,gridx,gridy,DataOLM,Field,ColorSets);';
-fprintf('For different color maps, run: \n %s\n',ssfunc)
+ssfunc='>>N = Color_Map_Neighbourhood_Seconds_Jet(Nsize,gridx,gridy,DataOLM,Field)';
+fprintf('For settings, run: \n %s\n',ssfunc)
 fprintf('Ony change: \n\nNsise: Neighborhood size in cm\n')
 fprintf('\ngridx: size of grid in x-axis in cm\n')
 fprintf('\ngridy: size of grid in y-axis in cm\n')
+
+save_colormap_data;
