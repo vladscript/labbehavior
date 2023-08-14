@@ -382,6 +382,7 @@ DataOLM.Xnose=Xnose;
 DataOLM.Ynose=Ynose;
 DataOLM.xratio=xratio;
 DataOLM.yratio=yratio;
+DataOLM.vidlength=TotalFrames;
 
 Field.leftLim=leftLim;
 Field.rightLim=rightLim;

@@ -1,5 +1,5 @@
 %% Color_Map_Neighbourhood
-function Color_Map_Neighbourhood(Nsize,gridx,gridy,DataOLM,Field,ColorSets)
+function Color_Map_Neighbourhood(Nsize,gridx,gridy,DataOLM,Field)
 % Considering ONLY intereactions AND an Nsize CM neighbourhood to the objects
 % %  Input
 %   Nsize:  Size Object Neighbourhood //cm
@@ -29,6 +29,9 @@ colmapFramesB=intersect(NeighB,DataOLM.interB);
 colmaframes=unique([colmapFramesB,colmapFramesA]);
 InterTotal=numel(DataOLM.interA)+numel(DataOLM.interB);
 
+Nframes=DataOLM.vidlength;
+MaxLim=max([numel(DataOLM.interA),numel(DataOLM.interB)]/Nframes);
+
 stephstX=round(gridx/DataOLM.xratio);
 stephstY=round(gridy/DataOLM.yratio);
 % xrange=sort([Field.leftLim(1),Field.rightLim(1)]);
@@ -42,21 +45,23 @@ N = hist3([DataOLM.Xnose(colmaframes),DataOLM.Ynose(colmaframes)],'Ctrs',ctrs); 
 % Ncolors=max(N(:));
 % Ncolors=sum(N(:));
 % Ncolors=10;
-Ncolors=1/(min(N(N(:)>0))/max(N(N(:)>0)));
+N=100*N/Nframes;
 
+% Ncolors=1/(min(N(N(:)>0))/max(N(N(:)>0)));
+% InterTotal/Nframes
 % 100*min(N(N(:)>0))/max(N(N(:)>0)); % minimum value diif from zero
 % N=N/Field.fps; % SECONDS
-N=100*N/InterTotal; % PERCENTAGE OF INTERACTION
+% N=100*N/InterTotal; % PERCENTAGE OF INTERACTION
 figure
 imagesc(N')
-
-
-CM=cbrewer(ColorSets.KindMap,ColorSets.ColorMapName,Ncolors);
-% CM(1,:)=[1,1,1];
+colormap jet;
+CM=colormap;
+CM(1,:)=[1,1,1];
 colormap(CM)
-clim([0 100])
-% clim([100*min(N(N(:)>0))/max(N(N(:)>0)),100]);
-% clim([min(N(N(:)>0)),max([])]);
+
+% clim([min(N(N(:)>0)),MaxLim]);
+clim([min(N(N(:)>0)),max(N(:))]);
+
 AxB=gca;
 AxB.YLim=[0.5,size(N,2)+.5];
 AxB.XLim=[0.5,size(N,1)+.5];
@@ -91,13 +96,13 @@ plot(AxB,pgonBpix,'FaceColor','green','EdgeColor','green')
 % ax1.YLim;=ax1.XLim;
 % AxB.YTick=ax1.YTick;
 % AxB.XTick=ax1.XTick;
-cb=colorbar;
-cb.Ticks=[(0:10:100)];
+colorbar;
+% cb.Ticks=[(0:10:100)];
 
 % view(0,-90);
 % plot(AxB,pgonB)
 ylabel('[px]')
 xlabel('[px]')
-title(sprintf('%2.1fcm Grid Size: x=%2.1f cm, y=%2.1f cm Colorbar: [interaction %%]',Nsize,gridx,gridy))
+title(sprintf('%2.1fcm Grid Size: x=%2.1f cm, y=%2.1f cm Colorbar: [%% Length]',Nsize,gridx,gridy))
 figCM=gcf;
-figCM.Name='Color Map of Objects neighborhood: percentage of total interaction';
+figCM.Name='Color Map of Objects neighborhood: percentage total frames';
