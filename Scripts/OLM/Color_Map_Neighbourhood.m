@@ -1,5 +1,5 @@
 %% Color_Map_Neighbourhood
-function Color_Map_Neighbourhood(Nsize,gridx,gridy,DataOLM,Field)
+function N=Color_Map_Neighbourhood(Nsize,gridx,gridy,DataOLM,Field)
 % Considering ONLY intereactions AND an Nsize CM neighbourhood to the objects
 % %  Input
 %   Nsize:  Size Object Neighbourhood //cm
@@ -106,3 +106,4 @@ xlabel('[px]')
 title(sprintf('%2.1fcm Grid Size: x=%2.1f cm, y=%2.1f cm Colorbar: [%% Length]',Nsize,gridx,gridy))
 figCM=gcf;
 figCM.Name='Color Map of Objects neighborhood: percentage total frames';
+N=N';

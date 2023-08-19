@@ -8,13 +8,15 @@
 %   rightLim  right limit of area
 %   leftLim   left limit of area
 %   fps       frames per second
+%   tnose     frames with DLC detection
 %   savebool  boolean value to save file
 % Output
 % Figure
 % File
-function animatedistance(pgonA,pgonB,Xnose,Ynose,topLim,bottomLim,rightLim,leftLim,fps,savebool)
+function animatedistance(pgonA,pgonB,Xnose,Ynose,topLim,bottomLim,rightLim,leftLim,fps,tnose,savebool)
 %% setup 
-Nframes=numel(Xnose);
+% Nframes=numel(tnose);
+Nframes=tnose(end)+1; % starts at zero
 if savebool
     nameout='video_salida';                 % Hz: dafult frames per second (user input)
     prompt={'Name:'};
@@ -44,23 +46,30 @@ line2B=plot(ax1,[0,mean(pgonB.Vertices(:,1))],[0,mean(pgonB.Vertices(:,2))],'Col
 % line2A.Visible='off';
 % line2B.Visible='off';
 axis(ax1,[leftLim(1),rightLim(1),topLim(2),bottomLim(2)]);
-tailxy=plot(Xnose(1),Ynose(1));
+% tailxy=plot(Xnose(1),Ynose(1));
 drawnow;
 
 % ANIMATION
-
+axu=1;
 for n=1:Nframes
-    x=Xnose(n); y=Ynose(n);
-    [~,x_polyA,y_polyA] = p_poly_dist(x, y, pgonA.Vertices(:,1), pgonA.Vertices(:,2));
-    [~,x_polyB,y_polyB] = p_poly_dist(x, y, pgonB.Vertices(:,1), pgonB.Vertices(:,2));
-    line2A.XData=[x,x_polyA];
-    line2A.YData=[y,y_polyA];
-    line2B.XData=[x,x_polyB];
-    line2B.YData=[y,y_polyB];
-
-    plot(ax1,x,y,'.','Color',[0.42 0.35 0.2])
-
-    drawnow
+    if ismember(n,tnose+1)
+        line2A.Visible='on';
+        line2B.Visible='on';
+        x=Xnose(axu); y=Ynose(axu);
+        [~,x_polyA,y_polyA] = p_poly_dist(x, y, pgonA.Vertices(:,1), pgonA.Vertices(:,2));
+        [~,x_polyB,y_polyB] = p_poly_dist(x, y, pgonB.Vertices(:,1), pgonB.Vertices(:,2));
+        line2A.XData=[x,x_polyA];
+        line2A.YData=[y,y_polyA];
+        line2B.XData=[x,x_polyB];
+        line2B.YData=[y,y_polyB];
+        plot(ax1,x,y,'.','Color',[0.42 0.35 0.2])
+        axu=axu+1;
+        drawnow
+    else
+        line2A.Visible='off';
+        line2B.Visible='off';
+        drawnow;
+    end
     fprintf('\n>Seconds: %3.1f / %3.1f',n/fps,Nframes/fps);
     if savebool
         frame = getframe(ax1);

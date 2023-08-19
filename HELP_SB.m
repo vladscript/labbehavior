@@ -1,2 +1,2 @@
 %% Open Help file
-open([pwd,'/html/USER_GUIDE.html'])
+open([pwd,'/Scripts/CommunalFunctions/html/User_guide])

@@ -8,7 +8,7 @@ EXPS={};            % List Of Experiments
 % Directory:
 Dirpwd=pwd;
 slashesindx=find(Dirpwd=='\');
-CurrentPathOK=[Dirpwd(1:slashesindx(end)),'OLM Results Tables'];
+CurrentPathOK=[Dirpwd(1:slashesindx(end)),'RESULTS INTEL CSV Tables'];
 % Load File 
 [FileName,PathName,MoreFiles] = uigetfile('*.csv',['Select .csv file, ONE by ONE'],...
     'MultiSelect', 'off',CurrentPathOK);
@@ -39,8 +39,9 @@ while isempty(answer)
 end
 
 fprintf('\n>Saving table: ')
-FileOutput=getDir2Save();
+% FileOutput=getDir2Save();
 
 fprintf('\n@ %s\n',answer{1});
-writetable(TableActive,[FileOutput,answer{1},'.csv'])
+writetable(TableActive,[CurrentPathOK,answer{1},'.csv'])
 disp(TableActive);
+fprintf('<a href="matlab:dos(''explorer.exe /e, %s, &'')">See CSV files Here</a>\n',CurrentPathOK);

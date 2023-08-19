@@ -1,5 +1,8 @@
 %% To do
 % 1) Make colormap only for neighbouhood of the objects
+% FILES BACTH ANLAYSIS
+% Trajectory
+% Conditons of rejected/accepted explorations
 
 %% load data
 % read csv from deeplabcut
@@ -11,6 +14,16 @@ X=readdlctableOLM([selpath,file]);
 % DEFAULT VALUES
 % Minimum distance to objects to consider an interaction:
 Dclose=1;               % cm
+prompt={'cm:'};
+name='Interaction Threshold:';
+numlines=[1 50];
+defaultanswer={num2str(Dclose)};
+answer={};
+while isempty(answer)
+    answer=inputdlg(prompt,name,numlines,defaultanswer);
+end
+Dclose= str2double(answer{1});
+
 % Likelihood Threshold for DLC detections
 LikeliTh=0.9;
 % Seconds to measure velocity
@@ -395,7 +408,8 @@ Field.fps=fps;
 ColorSets.KindMap=KindMap;
 ColorSets.ColorMapName=ColorMapName;
 
-N = Color_Map_Neighbourhood_Seconds_Jet(Nsize,gridx,gridy,DataOLM,Field);
+% N = Color_Map_Neighbourhood_Seconds_Jet(Nsize,gridx,gridy,DataOLM,Field);
+N=Color_Map_Neighbourhood(Nsize,gridx,gridy,DataOLM,Field);
 
 ssfunc='>>N = Color_Map_Neighbourhood_Seconds_Jet(Nsize,gridx,gridy,DataOLM,Field)';
 fprintf('For settings, run: \n %s\n',ssfunc)

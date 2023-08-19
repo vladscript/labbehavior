@@ -75,7 +75,7 @@ BODYPARTS={'earleftx';
 'downl';	
 'leftx';	
 'lefty';	
-'leftl'}
+'leftl'};
 
 %% Input handling
 
