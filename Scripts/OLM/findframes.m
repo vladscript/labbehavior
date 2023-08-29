@@ -20,4 +20,4 @@ end
 Total=((tb-ta)/fps)/60;
 Minutos=floor(Total);
 Segundos=(Total-Minutos)*60;
-fprintf('>Interval of first and last correct ID of mouse: %i:%1.1f\n',Minutos,Segundos);
+fprintf('\n>Interval of first and last correct ID of mouse: %i:%1.1f\n',Minutos,Segundos);

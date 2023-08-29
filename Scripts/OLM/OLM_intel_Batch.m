@@ -214,25 +214,26 @@ for i=1:numel(file)
     % Right part
     OLra=overlapobjectframes(dlA,Dclose);
     OLrb=overlapobjectframes(dlB,Dclose);
-    
-    NoverA=size([OLa;OLla;OLra],1);
-    NoverB=size([OLb;OLlb;OLrb],1);
+    OLA=[OLa;OLla;OLra];
+    OLB=[OLb;OLlb;OLrb];
+    NoverA=size(OLA,1);
+    NoverB=size(OLB,1);
     
     
     % Discarded overlapping frames
     disA=[]; tdisA=0;
     if NoverA>0
         for n=1:NoverA
-            disA=[disA,OLa(n,1):OLa(n,2)];
-            tdisA=tdisA+OLa(n,3);
+            disA=[disA,OLA(n,1):OLA(n,2)];
+            tdisA=tdisA+OLA(n,3);
         end
     end
     
     disB=[]; tdisB=0;
     if NoverB>0
         for n=1:NoverB
-            disB=[disB,OLb(n,1):OLb(n,2)];
-            tdisB=tdisB+OLb(n,3);
+            disB=[disB,OLB(n,1):OLB(n,2)];
+            tdisB=tdisB+OLB(n,3);
         end
     end
     
@@ -296,7 +297,7 @@ for i=1:numel(file)
         median(drate),numel(TIMES),median(AMP),TotalFrames/fps,...
         yratio,xratio,PA,PB,PrcDiscFrames);
     
-    Rtable.Properties.VariableNames={'Video_ID','Condition','Threshold_cm','Frame_A','Frame_B'...
+    Rtable.Properties.VariableNames={'Video_ID','Condition','Threshold_cm','Frame_Start','Frame_End'...
             'TotaTimeInter_s','A_percent','B_percent',...
             'N_inter_A','N_inter_B','OverlapA_s','OverlapB_s','N_over_A','N_over_B',...
             'TotalDistance_cm','WindowTime_s','MedianVelWin_cm_s','N_Bouts','MedianVelBout_cm_s','VideoLength_s',...
