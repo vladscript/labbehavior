@@ -7,6 +7,7 @@ plot(topLim(1),topLim(2),'+','MarkerSize',5,'Color','r','LineWidth',3)
 plot(bottomLim(1),bottomLim(2),'+','MarkerSize',5,'Color','r','LineWidth',3)
 grid on;
 ax1=gca;
+ax1.YDir="reverse";
 plot(ax1,pgonA,'FaceColor','blue','EdgeColor','blue')
 plot(ax1,pgonB,'FaceColor','green','EdgeColor','green')
 

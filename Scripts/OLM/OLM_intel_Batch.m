@@ -69,21 +69,43 @@ for i=1:numel(file)
     f=file{i};
     fprintf('>Loading %s',f)
     X=readdlctableOLM([selpath,f]); % READ DATA
+    [ta,tb]=findframes(X,LikeliTh,fps);
+    X=X(ta:tb,:);
     fprintf('\n')
     [TotalFrames,COLS]=size(X);
+    
     Nparts=round((COLS-1)/3);
     OkIndx= find(X.nosel>=LikeliTh);
     nookinde=setdiff(1:size(X,1),OkIndx);
     DiscarFrames=TotalFrames -   numel(OkIndx);
     PrcDiscFrames=100*(DiscarFrames/TotalFrames);
     fprintf('>%s  \n>Nose likelihood threshold: %3.3f \n> %i interpolated frames: %3.1f %% of the video.',f,LikeliTh,DiscarFrames,PrcDiscFrames)
-    %% Nose Coordinates
-    fprintf('\n>Reading all nose coordinates:')
+    %% Nose & Body Coordinates
+    fprintf('\n>Reading all nose/body coordinates:')
     tnose=X.FRAME;
     Xnose=X.nosex;
     Ynose=X.nosey;
     Xnose=interbadpoint(Xnose,nookinde,10);
     Ynose=interbadpoint(Ynose,nookinde,10);
+
+    Xlatleft=X.lateralleftx;
+    Ylatleft=X.laterallefty;
+    indx2inter=find(X.lateralleftl<LikeliTh);
+    Xlatleft=interbadpoint(Xlatleft,indx2inter,10);
+    Ylatleft=interbadpoint(Ylatleft,indx2inter,10);
+
+    Xlatright=X.lateralrightx;
+    Ylatright=X.lateralrighty;
+    indx2inter=find(X.lateralrightl<LikeliTh);
+    Xlatright=interbadpoint(Xlatright,indx2inter,10);
+    Ylatright=interbadpoint(Ylatright,indx2inter,10);
+
+    Xcenter=X.centerx;
+    Ycenter=X.centery;
+    indx2inter=find(X.centerl<LikeliTh);
+    Xcenter=interbadpoint(Xcenter,indx2inter,10);
+    Ycenter=interbadpoint(Ycenter,indx2inter,10);
+
     fprintf(' ready.\n')
     %% Field Area:
     
@@ -160,8 +182,7 @@ for i=1:numel(file)
     PB=polygonperimeter(pgonB,xratio,yratio);
 
     fprintf('>>Perimeters: of:\n>Object A: %3.2f px -> %3.2f cm \n>Object B: %3.2f px -> %3.2f cm \n',pgonA.perimeter,PA,pgonB.perimeter,PB);
-    %% Distance from Nose to Objects
-    
+    %% Distance from Nose/Other Parts to Objects
     Npoints=numel(Xnose);
     fprintf('\n>Measuring distances: .')
     for i=1:Npoints
@@ -169,14 +190,33 @@ for i=1:numel(file)
         [dA(i),x_polyA(i),y_polyA(i)] = p_poly_dist(x, y, pgonA.Vertices(:,1)*xratio, pgonA.Vertices(:,2)*yratio);
         [dB(i),x_polyB(i),y_polyB(i)] = p_poly_dist(x, y, pgonB.Vertices(:,1)*xratio, pgonB.Vertices(:,2)*yratio);
         %plot(x,y,'ko')
+        % LEFT PART OF THE MOUSE
+        xl=Xlatleft(i)*xratio; yl=Ylatleft(i)*yratio;
+        [dlA(i),~,~] = p_poly_dist(xl, yl, pgonA.Vertices(:,1)*xratio, pgonA.Vertices(:,2)*yratio);
+        [dlB(i),~,~] = p_poly_dist(xl, yl, pgonB.Vertices(:,1)*xratio, pgonB.Vertices(:,2)*yratio);
+        
+        % RIGHT PART OF THE MOUSE
+        xr=Xlatright(i)*xratio; yr=Ylatright(i)*yratio;
+        [drA(i),~,~] = p_poly_dist(xr, yr, pgonA.Vertices(:,1)*xratio, pgonA.Vertices(:,2)*yratio);
+        [drB(i),~,~] = p_poly_dist(xr, yr, pgonB.Vertices(:,1)*xratio, pgonB.Vertices(:,2)*yratio);
+
     end
     fprintf('.. done.')
     fprintf('~Negative distance means overlapping -> discarding frames:\n');
+    % Nose
     OLa=overlapobjectframes(dA,Dclose);
     OLb=overlapobjectframes(dB,Dclose);
+
+    % Left part
+    OLla=overlapobjectframes(dlA,Dclose);
+    OLlb=overlapobjectframes(dlB,Dclose);
+
+    % Right part
+    OLra=overlapobjectframes(dlA,Dclose);
+    OLrb=overlapobjectframes(dlB,Dclose);
     
-    NoverA=size(OLa,1);
-    NoverB=size(OLb,1);
+    NoverA=size([OLa;OLla;OLra],1);
+    NoverB=size([OLb;OLlb;OLrb],1);
     
     
     % Discarded overlapping frames
@@ -249,14 +289,14 @@ for i=1:numel(file)
     
     fprintf('%s',Name);
     
-    Rtable=table(VidID,{Condition},Dclose, ...
+    Rtable=table(VidID,{Condition},Dclose,ta,tb, ...
         TotalInter/fps,prefA,prefB, ...
         NinterA,NinterB,numel(disA)/fps,numel(disB)/fps,NoverA,NoverB,...
         TotalDistance,ws,...
         median(drate),numel(TIMES),median(AMP),TotalFrames/fps,...
         yratio,xratio,PA,PB,PrcDiscFrames);
     
-    Rtable.Properties.VariableNames={'Video_ID','Condition','Threshold_cm',...
+    Rtable.Properties.VariableNames={'Video_ID','Condition','Threshold_cm','Frame_A','Frame_B'...
             'TotaTimeInter_s','A_percent','B_percent',...
             'N_inter_A','N_inter_B','OverlapA_s','OverlapB_s','N_over_A','N_over_B',...
             'TotalDistance_cm','WindowTime_s','MedianVelWin_cm_s','N_Bouts','MedianVelBout_cm_s','VideoLength_s',...
