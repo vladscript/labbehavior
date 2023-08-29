@@ -65,8 +65,8 @@ VerticalLenght=30;      % cm
 HorizontalLenght=30;    % cm
 
 %% MAIN LOOP
-for i=1:numel(file)
-    f=file{i};
+for n=1:numel(file)
+    f=file{n};
     fprintf('>Loading %s',f)
     X=readdlctableOLM([selpath,f]); % READ DATA
     [ta,tb]=findframes(X,LikeliTh,fps);
@@ -185,10 +185,12 @@ for i=1:numel(file)
     %% Distance from Nose/Other Parts to Objects
     Npoints=numel(Xnose);
     fprintf('\n>Measuring distances: .')
+    dA=zeros(1,Npoints);
+    dB=dA; dlA=dA; dlB=dA; drA=dA; drB=dA;
     for i=1:Npoints
         x=Xnose(i)*xratio; y=Ynose(i)*yratio;
-        [dA(i),x_polyA(i),y_polyA(i)] = p_poly_dist(x, y, pgonA.Vertices(:,1)*xratio, pgonA.Vertices(:,2)*yratio);
-        [dB(i),x_polyB(i),y_polyB(i)] = p_poly_dist(x, y, pgonB.Vertices(:,1)*xratio, pgonB.Vertices(:,2)*yratio);
+        [dA(i),~,~] = p_poly_dist(x, y, pgonA.Vertices(:,1)*xratio, pgonA.Vertices(:,2)*yratio);
+        [dB(i),~,~] = p_poly_dist(x, y, pgonB.Vertices(:,1)*xratio, pgonB.Vertices(:,2)*yratio);
         %plot(x,y,'ko')
         % LEFT PART OF THE MOUSE
         xl=Xlatleft(i)*xratio; yl=Ylatleft(i)*yratio;
