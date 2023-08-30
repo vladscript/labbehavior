@@ -11,7 +11,7 @@ ax1.YDir="reverse";
 plot(ax1,pgonA,'FaceColor','blue','EdgeColor','blue')
 plot(ax1,pgonB,'FaceColor','green','EdgeColor','green')
 
-plot(ax1,Xnose,Ynose,'Color',[0.8 0.8 0.8],'Marker','.');
+plot(ax1,Xnose,Ynose,'Color',[0.8 0.8 0.8],'Marker','.','LineStyle','none');
 
 L=legend(ax1,'','','','','A','B','Nose');
 L.AutoUpdate='off';
