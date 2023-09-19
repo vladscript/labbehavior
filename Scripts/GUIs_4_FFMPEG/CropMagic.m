@@ -1,10 +1,23 @@
 %% settings
 %  is ffmpeg installed
-disp('>Necessary MATLAB R2018b at least & FFMPEG installed')
+disp('>Necessary MATLAB R2018b at least & FFMPEG installed as system var')
 %% Read directory folder of videos
 % fsep=filesep;
 VidDir=uigetdir(pwd);
 %% Load Snaphotps
+
+% Sufix
+prompt={'Suffix / Part:'};
+name='Text entry:';
+numlines=[1 50];
+defaultanswer={'_CROPPED'};
+sufixid={};
+while isempty(sufixid)
+    sufixid=inputdlg(prompt,name,numlines,defaultanswer);
+end
+
+
+
 % Select .extension of files
 list = {'.avi','.mp4','.mkv','.mov'};
 [indx,tf] = listdlg('PromptString',{'Select  video extension(s).',...
@@ -60,7 +73,7 @@ if ~stopflag
     for n=1:numel(NamesVideos)
         A = ['"',VidDir,filesep,NamesVideos{n},'"'];
         DotIndx=strfind(NamesVideos{n},'.');
-        VideoOut=[NamesVideos{n}(1:DotIndx-1 ),'_CROPPED',NamesVideos{n}(DotIndx:end)];
+        VideoOut=[NamesVideos{n}(1:DotIndx(end)-1 ),sufixid{1},NamesVideos{n}(DotIndx(end):end)];
         B = ['"',VidDir,filesep,VideoOut,'"'];
         % ffmpeg -i in.mp4 -filter:v "crop=out_w:out_h:x:y" out.mp4
         eval(sprintf('!ffmpeg -i %s -filter:v "crop=%i:%i:%i:%i" %s',char(A),...
@@ -73,6 +86,6 @@ if ~stopflag
     % eval(sprintf('!ffplay %s',char(A)))
     fprintf('<a href="matlab:dos(''explorer.exe /e, %s, &'')">Cropped Videos Here</a>\n',VidDir)
 else
-    fprintf('>\n Trasnform videos to %s',cell2mat(list))
+    fprintf('>\n Transform videos to %s',cell2mat(list))
 end
 fprintf('\nEND\n')

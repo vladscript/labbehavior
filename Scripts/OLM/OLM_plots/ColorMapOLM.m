@@ -1,3 +1,4 @@
+
 % % Grid size for heatmap
 % gridx     size of the grid in x-axis in cm
 % gridy=3;  size of the grid in y-axis in cm
@@ -9,20 +10,29 @@
 % Example:
 % >ColorMapOLM(1,1,'seq','Greens',TaskData)
 % %% 1cm grid size in x and y using a squential of greens
-function ColorMapOLM(gridx,gridy,KindMap,ColorMapName,TaskData)
+% function ColorMapOLM(gridx,gridy,KindMap,ColorMapName,TaskData)
+% function ColorMapOLM(TaskData)
 % Get Data
 
-Xnose=TaskData.Xnose;
-Ynose=TaskData.Ynose;
-xratio=TaskData.xratio;
-yratio=TaskData.yratio;
-leftLim=TaskData.leftLim;
-rightLim=TaskData.rightLim;
-topLim=TaskData.topLim;
-bottomLim=TaskData.bottomLim;
-pgonA=TaskData.pgonA;
-pgonB=TaskData.pgonB;
-fps=TaskData.fps;
+ % Grid size for heatmap
+gridx=3;    % cm
+gridy=3;    % cm
+% Color map for heatmap (google CBREWER for more):
+KindMap='seq';
+ColorMapName='PuRd';
+
+
+% Xnose=Xnose;
+% Ynose=TaskData.Ynose;
+% xratio=TaskData.xratio;
+% yratio=TaskData.yratio;
+% leftLim=TaskData.leftLim;
+% rightLim=TaskData.rightLim;
+% topLim=TaskData.topLim;
+% bottomLim=TaskData.bottomLim;
+% pgonA=TaskData.pgonA;
+% pgonB=TaskData.pgonB;
+% fps=TaskData.fps;
 
 % Colormap Complete Exploratory
 stephstX=round(gridx/xratio);

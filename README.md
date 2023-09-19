@@ -1,110 +1,90 @@
-# Laboratory Behaviors (IFC-UNAM-Neuroscience)
+# Laboratory Behaviors
 
-+ Asses motor behaviors in rodents for slice brain experiments, *electrophysiology* and *calcium imaging*
++ Toolbox of MATLAB scripts to extract features and retrieve information from animal behaviors
 
-+ MATLAB scripts to analyze poses from [DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)
 
-### Circular Open Field
+## Requirements
 
-- Setup: Cilinder
+- DeepLabCut [DLC](https://deeplabcut.github.io/DeepLabCut/README.html)
 
-- Camera: Android telephone & Ipad, Training Resolution
+- [MATLAB](https://la.mathworks.com/)
 
-- Bodyparts: ***Head***, ***Tail Base***, ***Back***, ***Left Ear***, ***Right Ear***
+- [FFmpeg](https://www.ffmpeg.org/) to crop, trim and change resoluton of videos as sys var
 
-### Gait
 
-Specs:
+## TASKS
 
-- Setup: custom acrylic bridge
 
-- Camera: Android telephone
+### Circular OpenField
 
-- Bodyparts:
-
-### Abnormal Involuntary Movements
-
-Specs:
-
-- Setup:
-
-- Camera:
-
-- Bodyparts:
-
-## Trained Networks
-
-DeepLabCut Models were trained using data with only C57 BL/6J only (for now).
-
-PC environment GPU GeForce GTX 1050 Ti in Ubuntu 18.04.5,
-NVIDIA-SMI 450.66 CUDA version 11.0.
-
-Labelling was peroformed in Windows and Ubuntu CPU
-
-### OpenField
-
-Training error:
-
-Validation error:
-
-Detection example:
+Pose detection sample:
 
 ![Setup](/Figures/OpenField_Mice.png "Circular Open Field")
 
-LINK
+### Squared OpenField
 
-### Gait
+Pose detection sample:
 
-Training error:
+![Setup](/Figures/SQR_OpenField.png "Rectangular Open Field")
 
-Validation error:
+### Rectangular OpenField
 
-Detection example:
+Pose detection sample:
+
+![Setup](/Figures/OpenField_Mice.png "Circular Open Field")
+
+### Gait patterns
+
+Pose detection sample:
 
 ![Setup](/Figures/Gait_Mice.png "Gait Patterns")
 
-LINK
 
 ### Object Location Memory (OLM)
 
-Training error:
+Pose detection sample:
 
-Validation error:
+![Setup](/Figures/OLM_task_A.png "Sinlge mouse")
 
-Detection example:
+![Setup](/Figures/OLM_task_B.png "Sinlge mouse and optic fiber")
 
-![Setup](/Figures/Gait_Mice.png "Gait Patterns")
 
-LINK
+### Pupils (mice eyes)
 
-### AIMs (box)
+Pose detection sample:
 
-Training error:
+![Setup](/Figures/Pupils.png "Mouse in Go/NoGo task")
 
-Validation error:
+### Sounds (ultrasonic microphone)
 
-LINK
+Analysis and edition of sound recordings.
 
-## Instructions for new data
+### GUIs for FFMPEG 
 
-### Requirements
+- Graphical Use Interface to crop videos
 
-- DeepLabCut (DLC)
 
-- MATLAB
+## General guide
 
-- Optional but higly recomended: [FFmpeg](https://www.ffmpeg.org/) to edit videos.
+2. All lscritps read CSV obtained from DLC of specific trained networks
 
-### Steps
+3. Some tasks require snapshots from the videos processed in DLC (e.g. Circular Open Field & Gait Patterns)
 
-1. Download model(s) of interest and modify config file to use it in your computer
-
-2. Analyze and extract CSV poses using DLC
-
-3. Save snapshots for each video (in case of Open Field & Gait)
-
-4. Run Scripts and follow [**this**](http://htmlpreview.github.io/?https://github.com/vladscript/labbehavior/blob/master/html/USER_GUIDE.html)
+4. Specific guide [**this**](http://htmlpreview.github.io/?https://github.com/vladscript/labbehavior/blob/master/html/USER_GUIDE.html)
 
 ### Third Party Code
 
 Alejandro Weinstein (2023). Distance from a point to polygon (https://www.mathworks.com/matlabcentral/fileexchange/19398-distance-from-a-point-to-polygon), MATLAB Central File Exchange. Retrieved March 23, 2023.
+
+[CBREWER](https://www.mathworks.com/matlabcentral/fileexchange/58350-cbrewer2)
+
+## Gear to train Networks
+
+Resnet:
+PC environment GPU GeForce GTX 1050 Ti in Ubuntu 18.04.5,
+NVIDIA-SMI 450.66 CUDA version 11.0.
+
+mobilenet v21.0
+Windows 11 PC (Dell OptiPlex 7090 with Intel Core i7 CPU 2.90 GHz and 40 GB RAM) 
+
+Labelling was peroformed in Windows and Ubuntu laptops/PCs

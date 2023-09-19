@@ -1,4 +1,5 @@
 % Input
+%   FD        Folder DEstination
 %   pgonA     polyshape [pixels]
 %   pgonB     polyshape [pixels]
 %   Xnose     x-coordinate [pixels]
@@ -13,12 +14,12 @@
 % Output
 % Figure
 % File
-function animatedistance(pgonA,pgonB,Xnose,Ynose,topLim,bottomLim,rightLim,leftLim,fps,tnose,savebool)
+function animatedistance(FD,pgonA,pgonB,Xnose,Ynose,topLim,bottomLim,rightLim,leftLim,fps,tnose,savebool)
 %% setup 
 % Nframes=numel(tnose);
 Nframes=tnose(end)+1; % starts at zero
 if savebool
-    nameout='video_salida';                 % Hz: dafult frames per second (user input)
+    nameout=FD;                 % Hz: dafult frames per second (user input)
     prompt={'Name:'};
     name='Video:';
     numlines=1;

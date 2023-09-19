@@ -1,5 +1,5 @@
 %% Color_Map_Neighbourhood
-function N=Color_Map_Neighbourhood(Nsize,gridx,gridy,DataOLM,Field)
+% function N=Color_Map_Neighbourhood(Nsize,gridx,gridy,DataOLM,Field)
 % Considering ONLY intereactions AND an Nsize CM neighbourhood to the objects
 % %  Input
 %   Nsize:  Size Object Neighbourhood //cm
@@ -18,30 +18,30 @@ function N=Color_Map_Neighbourhood(Nsize,gridx,gridy,DataOLM,Field)
 %% Colormap Exploratory
 % Nsize=6;  % cm
 
-pgonApix=Field.pgonA;
-pgonBpix=Field.pgonB;
+% pgonApix=pgonA;
+% pgonBpix=pgonB;
 
-NeighA=find(DataOLM.dA<=Nsize);
-NeighB=find(DataOLM.dB<=Nsize);
+NeighA=find(dA<=Nsize);
+NeighB=find(dB<=Nsize);
 
-colmapFramesA=intersect(NeighA,DataOLM.interA);
-colmapFramesB=intersect(NeighB,DataOLM.interB);
+colmapFramesA=intersect(NeighA,interA);
+colmapFramesB=intersect(NeighB,interB);
 colmaframes=unique([colmapFramesB,colmapFramesA]);
-InterTotal=numel(DataOLM.interA)+numel(DataOLM.interB);
+InterTotal=numel(interA)+numel(interB);
+vidlength=Npoints;
+Nframes=vidlength;
+MaxLim=max([numel(interA),numel(interB)]/Nframes);
 
-Nframes=DataOLM.vidlength;
-MaxLim=max([numel(DataOLM.interA),numel(DataOLM.interB)]/Nframes);
-
-stephstX=round(gridx/DataOLM.xratio);
-stephstY=round(gridy/DataOLM.yratio);
-% xrange=sort([Field.leftLim(1),Field.rightLim(1)]);
-% yrange=sort([Field.topLim(2),Field.bottomLim(2)]);
-xrange=[min(min(DataOLM.Xnose(colmaframes)),min(pgonApix.Vertices(:,1)))-Nsize,max(max(DataOLM.Xnose(colmaframes)),max(pgonBpix.Vertices(:,1)))+Nsize];
-yrange=[min(min(DataOLM.Ynose(colmaframes)),min(pgonBpix.Vertices(:,2)))-Nsize,max(max(DataOLM.Xnose(colmaframes)),max(pgonApix.Vertices(:,2)))+Nsize];
+stephstX=round(gridx/xratio);
+stephstY=round(gridy/yratio);
+% xrange=sort([leftLim(1),rightLim(1)]);
+% yrange=sort([topLim(2),bottomLim(2)]);
+xrange=[min(min(Xnose(colmaframes)),min(pgonApix.Vertices(:,1)))-Nsize,max(max(Xnose(colmaframes)),max(pgonBpix.Vertices(:,1)))+Nsize];
+yrange=[min(min(Ynose(colmaframes)),min(pgonBpix.Vertices(:,2)))-Nsize,max(max(Xnose(colmaframes)),max(pgonApix.Vertices(:,2)))+Nsize];
 
 ctrs={round(xrange(1)):stephstX:round(xrange(2)) round(yrange(1)):stephstY:round(yrange(2))};
 
-N = hist3([DataOLM.Xnose(colmaframes),DataOLM.Ynose(colmaframes)],'Ctrs',ctrs); % FRAMES
+N = hist3([Xnose(colmaframes),Ynose(colmaframes)],'Ctrs',ctrs); % FRAMES
 % Ncolors=max(N(:));
 % Ncolors=sum(N(:));
 % Ncolors=10;
@@ -50,7 +50,7 @@ N=100*N/Nframes;
 % Ncolors=1/(min(N(N(:)>0))/max(N(N(:)>0)));
 % InterTotal/Nframes
 % 100*min(N(N(:)>0))/max(N(N(:)>0)); % minimum value diif from zero
-% N=N/Field.fps; % SECONDS
+% N=N/fps; % SECONDS
 % N=100*N/InterTotal; % PERCENTAGE OF INTERACTION
 figure
 imagesc(N')
@@ -83,11 +83,11 @@ DeltaYpx=size(N,2);
 % x->value
 % (x/DeltaX)*DeltaXpx
 
-pgonApix.Vertices(:,1) = DeltaXpx*((Field.pgonA.Vertices(:,1)-ctrs{1}(1))/DeltaX); % x 
-pgonApix.Vertices(:,2) = DeltaYpx*((Field.pgonA.Vertices(:,2)-ctrs{2}(1))/DeltaY); % y
+pgonApix.Vertices(:,1) = DeltaXpx*((pgonA.Vertices(:,1)-ctrs{1}(1))/DeltaX); % x 
+pgonApix.Vertices(:,2) = DeltaYpx*((pgonA.Vertices(:,2)-ctrs{2}(1))/DeltaY); % y
 
-pgonBpix.Vertices(:,1) = DeltaXpx*((Field.pgonB.Vertices(:,1)-ctrs{1}(1))/DeltaX); % x 
-pgonBpix.Vertices(:,2) = DeltaYpx*((Field.pgonB.Vertices(:,2)-ctrs{2}(1))/DeltaY); % y
+pgonBpix.Vertices(:,1) = DeltaXpx*((pgonB.Vertices(:,1)-ctrs{1}(1))/DeltaX); % x 
+pgonBpix.Vertices(:,2) = DeltaYpx*((pgonB.Vertices(:,2)-ctrs{2}(1))/DeltaY); % y
 
 hold on
 plot(AxB,pgonApix,'FaceColor','blue','EdgeColor','blue')

@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>USER GUIDE</title><meta name="generator" content="MATLAB 9.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2023-08-18"><meta name="DC.source" content="User_Guide.m"><style type="text/css">
+      --><title>USER GUIDE</title><meta name="generator" content="MATLAB 9.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2023-09-08"><meta name="DC.source" content="User_Guide.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -67,26 +67,32 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
 
 
-  </style></head><body><div class="content"><h1>USER GUIDE</h1><!--introduction--><p>Run these scripts to measure behavior,</p><p>using the output CSV files from DeepLabCut.</p><p><b><tt>BEFORE ANYTHING</tt></b>, import functions:</p><p>&gt;&gt;Import_Scripts</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">General</a></li><li><a href="#2">1- Circular Open Field</a></li><li><a href="#3">2- Gait Analysis</a></li><li><a href="#4">3- Object Location Memory OLM</a></li></ul></div><h2 id="1">General</h2><p>Crop a bathc of video files, choosing a rectangular area and ffmpeg commands (Necessary MATLAB R2018b at least &amp; FFMPEG installed) Input: file directory and video fille extensions</p><p>&gt;&gt;CropMagic</p><p>Ouput: cropped video files</p><h2 id="2">1- Circular Open Field</h2><p>Visualizes Centroid Trajectory from posture CSV files:</p><p>&gt;&gt;Script_OpenField</p><p>Save .mat file for further analysis [ <b>This requires snapshots from each video</b>]</p><p>&gt;&gt;OpenFieldfromDLC</p><p>Load .mat file in workspace and:</p><p>&gt;&gt;Plot_Experiment</p><p>PLOT BOXPLOTS TO COMPARE CONDITIONS from .mat FILES</p><p>&gt;&gt;ShowOpenFieldFeatures</p><h2 id="3">2- Gait Analysis</h2><p>Run the script and:</p><p>&gt;&gt;GaitAnalysis</p><p>1)Enter CSV from DCL</p><p>2)Enter Snapshot from video and set dimensions</p><p>3)Enter References of sizes</p><p>4)Copy-paste output lengths</p><p>Important: read texts in the Command Window</p><h2 id="4">3- Object Location Memory OLM</h2><p>DOTS FROM DLC: {}  1) Individual analysis: Inut: CSV from DLC and choose parameters</p><pre>&gt;&gt; OLM_intel</pre><pre class="language-matlab">Output: CSV with <span class="string">measured</span> <span class="string">features</span> <span class="string">and</span> <span class="string">plots</span>
-</pre><pre>2) batch analysis:</pre><pre>&gt;&gt; OLM_intel_Batch</pre><pre class="language-matlab">Output: CSV with <span class="string">measured</span> <span class="string">features</span>
-</pre><p>3) Visuazlizations</p><p>3.1) HeatMaps (Run after OLM_intel)</p><p>&gt;&gt;Color_Map_Neighbourhood(2,.5,.5,DataOLM,Field)</p><p>3.2) Distance video to polygons (Run after OLM_intel)</p><p>&gt;&gt;animatedistance(pgonA,pgonB,Xnose,Ynose,topLim,bottomLim,rightLim,leftLim,fps,tnose,1);</p><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022b</a><br></p></div><!--
+  </style></head><body><div class="content"><h1>USER GUIDE</h1><!--introduction--><p>Specific instructions for each task</p><p><b><tt>BEFORE ANYTHING</tt></b>, import functions:</p><p>&gt;&gt;Import_Scripts</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">GUIs_4_FFMPEG</a></li><li><a href="#2">1- Circular Open Field</a></li><li><a href="#3">2- Gait Analysis</a></li><li><a href="#4">3- Object Location Memory (OLM)</a></li><li><a href="#5">General use</a></li></ul></div><h2 id="1">GUIs_4_FFMPEG</h2><p>Necessary MATLAB R2018b at least &amp; FFMPEG installed as system variable</p><p><b>CropMagic</b> It allows to choose a rectangular area from each file from a batch of video recordings</p><pre class="language-matlab">&gt;&gt;CropMagic
+</pre><p>Input: file directory and video file extensions (it reads all files in the folder)</p><p>Ouput: cropped video files</p><h2 id="2">1- Circular Open Field</h2><p>Visualizes Centroid Trajectory from posture CSV files:</p><p>&gt;&gt;Script_OpenField</p><p>Save .mat file for further analysis [ <b>This requires snapshots from each video</b>]</p><p>&gt;&gt;OpenFieldfromDLC</p><p>Load .mat file in workspace and:</p><p>&gt;&gt;Plot_Experiment</p><p>PLOT BOXPLOTS TO COMPARE CONDITIONS from .mat FILES</p><p>&gt;&gt;ShowOpenFieldFeatures</p><h2 id="3">2- Gait Analysis</h2><p>Run the script and:</p><p>&gt;&gt;GaitAnalysis</p><p>1)Enter CSV from DCL</p><p>2)Enter Snapshot from video and set dimensions</p><p>3)Enter References of sizes</p><p>4)Copy-paste output lengths</p><p>Important: read texts in the Command Window</p><h2 id="4">3- Object Location Memory (OLM)</h2><pre>This scripts detects explorations of distance (d) of the mouse's nose to objects when: 0&lt;d&lt;2 cm</pre><pre>DOTS FROM DLC: {'earleft';'earright','nose','center','lateralleft',
+'lateralright','tailbase','tailend','oa1','oa2';'oa3','oa4','ob1','ob2'
+'ob3','ob4x','top','right','down','left'}</pre><pre>1) Analysis of CSV filesfrom DLC and set parameters: distance threshold,
+fps and experimental condition</pre><pre>&gt;&gt;OLM_intel_Batch</pre><pre class="language-matlab">Output: CSV with <span class="string">measured</span> <span class="string">features</span> <span class="string">and</span> <span class="string">plot</span> <span class="string">of</span> <span class="string">trajectory</span> <span class="string">and</span>
+explorations <span class="string">detected</span>
+</pre><pre>2) Additional visualizations/plots and data (run after indiviudal
+analysis)</pre><p>Only displays:</p><pre>&gt;&gt;animatedistance(pgonA,pgonB,Xnose,Ynose,topLim,bottomLim,rightLim,leftLim,fps,tnose,0);</pre><p>Saves animations as file:</p><pre>&gt;&gt;animatedistance(pgonA,pgonB,Xnose,Ynose,topLim,bottomLim,rightLim,leftLim,fps,tnose,1);</pre><pre>Output animation of distance between nose and objects (polygons)</pre><p>&gt;&gt; Color_Map_Neighbourhood(2,.5,.5,DataOLM,Field)</p><pre>3) Makes log of events</pre><pre>4) Extract videos (it requires FFMPEG isntalled)</pre><h2 id="5">General use</h2><pre>Stack CSV files (outputs of the scripts with the same columns)</pre><p>&gt;&gt;joindata</p><p>Create maps using CBREWER</p><p>&gt;&gt;Color_Selector</p><p>Displays colormaps from CBREWER</p><p>&gt;&gt;HELP_CBREWER</p><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022b</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 %% USER GUIDE
-% Run these scripts to measure behavior, 
-% 
-% using the output CSV files from DeepLabCut.
+%  
+% Specific instructions for each task
 % 
 % *|BEFORE ANYTHING|*, import functions: 
 % 
 % >>Import_Scripts
 % 
-%% General
+%% GUIs_4_FFMPEG
 % 
-% Crop a bathc of video files, choosing a rectangular area and ffmpeg
-% commands (Necessary MATLAB R2018b at least & FFMPEG installed)
-% Input: file directory and video fille extensions
+% Necessary MATLAB R2018b at least & FFMPEG installed as system variable
 % 
-% >>CropMagic
+% *CropMagic* It allows to choose a rectangular area from each file from a batch of video recordings
+% 
+%   >>CropMagic
+% 
+% Input: file directory and video file extensions (it reads all files in the folder)
 % 
 % Ouput: cropped video files
 % 
@@ -125,30 +131,57 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 % 
 % Important: read texts in the Command Window
 % 
-%% 3- Object Location Memory OLM
+%% 3- Object Location Memory (OLM)
 % 
-% DOTS FROM DLC: {}
-%  1) Individual analysis: Inut: CSV from DLC and choose parameters
+%  This scripts detects explorations of distance (d) of the mouse's nose to objects when: 0<d<2 cm
 % 
-%  >> OLM_intel
+%  DOTS FROM DLC: {'earleft';'earright','nose','center','lateralleft',
+% 'lateralright','tailbase','tailend','oa1','oa2';'oa3','oa4','ob1','ob2'
+% 'ob3','ob4x','top','right','down','left'}
 % 
-%   Output: CSV with measured features and plots
+%  1) Analysis of CSV filesfrom DLC and set parameters: distance threshold,
+%  fps and experimental condition
 % 
-%  2) batch analysis:
+%  >>OLM_intel_Batch
 % 
-%  >> OLM_intel_Batch
+%   Output: CSV with measured features and plot of trajectory and
+%   explorations detected
 % 
-%   Output: CSV with measured features 
+%  2) Additional visualizations/plots and data (run after indiviudal
+%  analysis)
 % 
-% 3) Visuazlizations
+% Only displays:
 % 
-% 3.1) HeatMaps (Run after OLM_intel)
-%   
-% >>Color_Map_Neighbourhood(2,.5,.5,DataOLM,Field)
+%  >>animatedistance(pgonA,pgonB,Xnose,Ynose,topLim,bottomLim,rightLim,leftLim,fps,tnose,0);
 % 
-% 3.2) Distance video to polygons (Run after OLM_intel)
-%   
-% >>animatedistance(pgonA,pgonB,Xnose,Ynose,topLim,bottomLim,rightLim,leftLim,fps,tnose,1);
-
+% Saves animations as file:
+% 
+%  >>animatedistance(pgonA,pgonB,Xnose,Ynose,topLim,bottomLim,rightLim,leftLim,fps,tnose,1); 
+% 
+%  Output animation of distance between nose and objects (polygons)
+% 
+% >> Color_Map_Neighbourhood(2,.5,.5,DataOLM,Field)
+% 
+%  3) Makes log of events 
+% 
+% 
+% 
+%  4) Extract videos (it requires FFMPEG isntalled)
+% 
+% 
+% 
+%% General use
+% 
+%  Stack CSV files (outputs of the scripts with the same columns)
+% 
+% >>joindata
+% 
+% Create maps using CBREWER
+% 
+% >>Color_Selector
+% 
+% Displays colormaps from CBREWER
+% 
+% >>HELP_CBREWER
 ##### SOURCE END #####
 --></body></html>

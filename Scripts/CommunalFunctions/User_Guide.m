@@ -1,19 +1,20 @@
 %% USER GUIDE
-% Run these scripts to measure behavior, 
-% 
-% using the output CSV files from DeepLabCut.
+%  
+% Specific instructions for each task
 % 
 % *|BEFORE ANYTHING|*, import functions: 
 % 
 % >>Import_Scripts
 % 
-%% General
+%% GUIs_4_FFMPEG
 % 
-% Crop a bathc of video files, choosing a rectangular area and ffmpeg
-% commands (Necessary MATLAB R2018b at least & FFMPEG installed)
-% Input: file directory and video fille extensions
+% Necessary MATLAB R2018b at least & FFMPEG installed as system variable
 % 
-% >>CropMagic
+% *CropMagic* It allows to choose a rectangular area from each file from a batch of video recordings
+% 
+%   >>CropMagic
+% 
+% Input: file directory and video file extensions (it reads all files in the folder)
 % 
 % Ouput: cropped video files
 % 
@@ -52,30 +53,55 @@
 % 
 % Important: read texts in the Command Window
 % 
-%% 3- Object Location Memory OLM
+%% 3- Object Location Memory (OLM)
 % 
-% DOTS FROM DLC: {'earleft';'earright','nose','center','lateralleft',
+%  This scripts detects explorations of distance (d) of the mouse's nose to objects when: 0<d<2 cm
+% 
+%  DOTS FROM DLC: {'earleft';'earright','nose','center','lateralleft',
 % 'lateralright','tailbase','tailend','oa1','oa2';'oa3','oa4','ob1','ob2'
 % 'ob3','ob4x','top','right','down','left'}
 % 
-%  1) Individual analysis: Inut: CSV from DLC and choose parameters
+%  1) Analysis of CSV filesfrom DLC and set parameters: distance threshold,
+%  fps and experimental condition
 % 
-%  >> OLM_intel
+%  >>OLM_intel_Batch
 % 
-%   Output: CSV with measured features and plots
+%   Output: CSV with measured features and plot of trajectory and
+%   explorations detected
 % 
-%  2) batch analysis:
+%  2) Additional visualizations/plots and data (run after indiviudal
+%  analysis)
 % 
-%  >> OLM_intel_Batch
+% Only displays:
 % 
-%   Output: CSV with measured features 
+%  >>animatedistance(FD,pgonA,pgonB,Xnose,Ynose,topLim,bottomLim,rightLim,leftLim,fps,tnose,0);
 % 
-% 3) Visuazlizations
+% Saves animations as file (see help documentation):
 % 
-% 3.1) HeatMaps (Run after OLM_intel)
-%   
+%  >>animatedistance(FD,pgonA,pgonB,Xnose,Ynose,topLim,bottomLim,rightLim,leftLim,fps,tnose,1); 
+% 
+%  Output animation of distance between nose and objects (polygons)
+% 
 % >> Color_Map_Neighbourhood(2,.5,.5,DataOLM,Field)
 % 
-% 3.2) Distance video to polygons (Run after OLM_intel)
-%   
-% >> animatedistance(pgonA,pgonB,Xnose,Ynose,topLim,bottomLim,rightLim,leftLim,fps,tnose,1);
+%  3) Makes log of events: run after single OLM_Intel_Batch:
+% 
+%  >>export_log
+% 
+%  4) Review videos: read log file and video
+% 
+%   >>OLM_Checker
+% 
+%% General use
+% 
+%  Stack CSV files (outputs of the scripts with the same columns)
+% 
+% >>joindata
+% 
+% Create maps using CBREWER
+% 
+% >>Color_Selector
+% 
+% Displays colormaps from CBREWER
+% 
+% >>HELP_CBREWER
