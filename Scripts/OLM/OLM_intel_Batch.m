@@ -309,7 +309,8 @@ for n=1:numel(file)
     disp(Rtable);
 
     %% OUPUT FIG
-    FD=[FileOutput,[f(1:indxmark-1),'_DISTANCES_VID']];
+%     FD=[FileOutput,[f(1:indxmark-1),'_DISTANCES_VID']];
+    FD=[FileOutput,f(1:indxmark-1)];
     plotdots()
     fprintf('\nAdditional functions:')
     fprintf('\n>>Plot_Distances2Objects')
@@ -318,6 +319,10 @@ for n=1:numel(file)
     fprintf('\n>>Plot_RawData')
     fprintf('\n>>ColorMapOLM')
     fprintf('\n>>Plot_RateVelocity\n')
+    fprintf('\n *** SAVE ANIMATIONS ***')
+    fprintf('\n>>animatedistance_explorations(FD,ta,pgonA,pgonB,Xnose,Ynose,fps,tnose,interA,interB,1)')
+    fprintf('\n>>animate_distances(FD,dA,dB,interA,interB,disA,disB,fps,Dclose,ta,1)\n')
+    
     
 end
 fprintf('<a href="matlab:dos(''explorer.exe /e, %s, &'')">See CSV files Here</a>\n',selpath);
