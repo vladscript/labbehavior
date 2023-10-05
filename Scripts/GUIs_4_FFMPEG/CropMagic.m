@@ -1,3 +1,7 @@
+%% TODO
+
+% Optional Export Log (coordinates as text file: vid_log.txt)
+
 %% settings
 %  is ffmpeg installed
 disp('>Necessary MATLAB R2018b at least & FFMPEG installed as system var')

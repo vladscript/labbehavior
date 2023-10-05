@@ -68,9 +68,9 @@ HorizontalLenght=30;    % cm
 for n=1:numel(file)
     f=file{n};
     fprintf('>Loading %s',f)
-    X=readdlctableOLM([selpath,f]); % READ DATA
+    X=readdlctableOLM([selpath,f]);         % READ DATA
     [ta,tb]=findframes(X,LikeliTh,fps);
-    X=X(ta:tb,:);
+    X=X(ta:tb,:);                           % TRIM DATA
     fprintf('\n')
     [TotalFrames,COLS]=size(X);
     Nparts=round((COLS-1)/3);

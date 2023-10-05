@@ -37,11 +37,11 @@ for n=1:Nfiles
     l3l=dataXY.pupil_left_L;
     l4l=dataXY.pupil_right_L;
     figure; 
-    ax1=subplot(221);
+    ax1=subplot(1,1,1);
     histogram(l1l,10); hold on;
     histogram(l2l,10);
     histogram(l3l,10);
-    histogram(l4l,10);  hold off;
+    histogram(l4l,10); hold off;
     grid on;
     title('Detection of pupils')
     ylabel('# frames')
@@ -73,10 +73,10 @@ for n=1:Nfiles
     if Ndots>2
         fprintf('\n>Measuring Area:')
     else
-        fprintf('\n>Measuring Length:')
+        fprintf('\n>Measuring stuff:')
     end
     % NframesOK=numel(TrFrames);
-    h = waitbar(0,'Getting area/length...');
+    h = waitbar(0,'Getting pupil metrics...');
     for m=1:N
         % PUPIL Size
         xpoints=table2array(dataXY(m,ColNumX(Dots)));
@@ -93,15 +93,15 @@ for n=1:Nfiles
         % EYE Size
         
         % Check LIkelihoods!!!
-        if dataXY.lid_top_L(m)>=LkTh+dataXY.corner_right_L(m)>=LkTh+dataXY.lid_bot_L(m)>=LkTh+dataXY.corner_left_L(m)>=LkTh==4
+        if and(and(dataXY.lid_top_L(m)>=LkTh,dataXY.corner_right_L(m)>=LkTh),and(dataXY.lid_bot_L(m)>=LkTh,dataXY.corner_left_L(m)>=LkTh))
             Peye(m)=polyshape([dataXY.lid_top_X(m),dataXY.corner_left_X(m),dataXY.lid_bot_X(m),dataXY.corner_right_X(m)],...
                 [dataXY.lid_top_Y(m),dataXY.corner_left_Y(m),dataXY.lid_bot_Y(m),dataXY.corner_right_Y(m)]);
-            Peyearea(m)=Peye.area;
+            Peyearea(m)=Peye(m).area;
         else
             Peyearea(m)=NaN;
         end
         % Distance between lid and bot
-        if dataXY.lid_top_L(m)>=LkTh+dataXY.lid_bot_L(m)>=LkTh==2
+        if and(dataXY.lid_top_L(m)>=LkTh,dataXY.lid_bot_L(m)>=LkTh)
             Blink(m)=twopartsdistance([dataXY.lid_top_X(m),dataXY.lid_top_Y(m)],[dataXY.lid_bot_X(m),dataXY.lid_bot_Y(m)]);
         else
             Blink(m)=NaN;
@@ -115,9 +115,10 @@ for n=1:Nfiles
     %% Save
     fprintf('\n>Sav')
     DotsName=PupilDots(Dots);
+    LHvec=prod(sQRl(:,Dots),2);
     ednindx=strfind(f,'mobnet');
     save([selpath,f(1:ednindx-1),'AREA_PUPIL'],'A','FramesOK','Ndots','LkTh',...
-        'Peyearea','Blink','DotsName');
+        'LHvec','Peyearea','Blink','DotsName');
     fprintf('ed\n')
 end
 %% END ###################################################################
