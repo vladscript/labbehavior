@@ -76,6 +76,8 @@ for n=1:Nfiles
         fprintf('\n>Measuring stuff:')
     end
     % NframesOK=numel(TrFrames);
+    EYE_X=[];
+    EYE_Y=[];
     h = waitbar(0,'Getting pupil metrics...');
     for m=1:N
         % PUPIL Size
@@ -91,11 +93,17 @@ for n=1:Nfiles
             A(m)=twopartsdistance([xpoints(1),ypoints(1)],[xpoints(2),ypoints(2)]);
         end
         % EYE Size
+        Xeye=[dataXY.lid_top_X(m),dataXY.corner_left_X(m),dataXY.lid_bot_X(m),dataXY.corner_right_X(m)];
+        Yeye=[dataXY.lid_top_Y(m),dataXY.corner_left_Y(m),dataXY.lid_bot_Y(m),dataXY.corner_right_Y(m)];
+        EYE_X=[EYE_X;Xeye ];
+        EYE_Y=[EYE_Y;Yeye ];
+        EYE_center(m,:)=[mean(Xeye,2),mean(Yeye)];
+        % Check Likelihoods!!!
         
-        % Check LIkelihoods!!!
         if and(and(dataXY.lid_top_L(m)>=LkTh,dataXY.corner_right_L(m)>=LkTh),and(dataXY.lid_bot_L(m)>=LkTh,dataXY.corner_left_L(m)>=LkTh))
-            Peye(m)=polyshape([dataXY.lid_top_X(m),dataXY.corner_left_X(m),dataXY.lid_bot_X(m),dataXY.corner_right_X(m)],...
-                [dataXY.lid_top_Y(m),dataXY.corner_left_Y(m),dataXY.lid_bot_Y(m),dataXY.corner_right_Y(m)]);
+%             Peye(m)=polyshape([dataXY.lid_top_X(m),dataXY.corner_left_X(m),dataXY.lid_bot_X(m),dataXY.corner_right_X(m)],...
+%                 [dataXY.lid_top_Y(m),dataXY.corner_left_Y(m),dataXY.lid_bot_Y(m),dataXY.corner_right_Y(m)]);
+            Peye(m)=polyshape(Xeye,Yeye);
             Peyearea(m)=Peye(m).area;
         else
             Peyearea(m)=NaN;
@@ -107,8 +115,18 @@ for n=1:Nfiles
             Blink(m)=NaN;
         end
         % fprintf('\n%3.2f',100*m/N);
+
+        % Centroids Pupil Eye
+        Centers_Pupil(m,:)=[mean(table2array(dataXY(m,[ColNumX]))),mean(table2array(dataXY(m,[ColNumY])))];
+        
+        % Eye Polygon
+
+
+
         waitbar(m/N,h);
     end
+    EYE_AVGPOSITION=[mean(EYE_X,"omitnan"),mean(EYE_Y,"omitnan")];
+    EYE_STDPOSITION=[std(EYE_X,"omitnan"),std(EYE_Y,"omitnan")];
     close(h);
     FramesOK=dataXY.frames(TrFrames)+1;
     fprintf(' complete.\n')
@@ -118,7 +136,8 @@ for n=1:Nfiles
     LHvec=prod(sQRl(:,Dots),2);
     ednindx=strfind(f,'mobnet');
     save([selpath,f(1:ednindx-1),'AREA_PUPIL'],'A','FramesOK','Ndots','LkTh',...
-        'LHvec','Peyearea','Blink','DotsName');
+        'LHvec','Peyearea','Blink','DotsName','Centers_Pupil','EYE_center',...
+        'EYE_AVGPOSITION','EYE_STDPOSITION');
     fprintf('ed\n')
 end
 %% END ###################################################################

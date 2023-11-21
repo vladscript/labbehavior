@@ -100,7 +100,7 @@ ax1.Color='None'; % Transparecy
 pbaspect(ratiosax);
 drawnow;
 
-Explorations=unique([interA,interB])+ta;
+Explorations=unique([interA,interB])+ta+1;
 
 % ANIMATION
 axu=1;

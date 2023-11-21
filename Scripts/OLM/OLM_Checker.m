@@ -3,8 +3,8 @@
 % READ VIDEO
 
 % VidName='W-OLM.Rubi-duringTraining_W-OLM.Rubi-duringTrainingII_LTM_R2DLC_mobnet_100_OLM07062023Jun7shuffle1_200000_labeled.mp4';
-% FileOutput='C:\Users\vladi\OneDrive - UNIVERSIDAD NACIONAL AUTÓNOMA DE MÉXICO\WORK\Data Analysis\Datos\Conducta\OLM\FIGS-METH\Vids\';
-VidName='R2.mp4';
+FileOutput='C:\Users\vladi\OneDrive - UNIVERSIDAD NACIONAL AUTÓNOMA DE MÉXICO\WORK\Data Analysis\Datos\Conducta\OLM\VIDEOS\S-OLM.3\';
+VidName='Updating R1.mp4';
 Vdir=[FileOutput,VidName];
 vidObj = VideoReader(Vdir);
 

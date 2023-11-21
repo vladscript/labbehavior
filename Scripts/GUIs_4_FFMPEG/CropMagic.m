@@ -1,6 +1,6 @@
 %% TODO
 
-% Optional Export Log (coordinates as text file: vid_log.txt)
+% Export Log (coordinates as text file: vid_log.txt)
 
 %% settings
 %  is ffmpeg installed

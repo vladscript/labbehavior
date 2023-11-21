@@ -1,8 +1,8 @@
 %% To do
 % 1) Make colormap only for neighbouhood of the objects
 % FILES BACTH ANLAYSIS
-% Trajectory
-% Conditons of rejected/accepted explorations
+% Trajectory: OK
+% Conditons of rejected/accepted explorations: OK
 
 %% load data
 % read csv from deeplabcut
@@ -18,7 +18,7 @@ end
 %% SETUP 
 % DEFAULT VALUES
 % Minimum distance to objects to consider an interaction:
-Dclose=1.3262;                  % cm (average)
+Dclose=2;                  % cm (average)
 prompt={'cm:'};
 name='Interaction Threshold:';
 numlines=[1 50];
@@ -30,7 +30,17 @@ end
 Dclose= str2double(answer{1});
 
 % Likelihood Threshold for DLC detections
-LikeliTh=0.9;
+LikeliTh=0.9; % DEFAULT 
+prompt={'likelihood:'};
+name='DLC likelihood Threshold:';
+numlines=[1 40];
+defaultanswer={num2str(LikeliTh)};
+answer={};
+while isempty(answer)
+    answer=inputdlg(prompt,name,numlines,defaultanswer);
+end
+LikeliTh= str2double(answer{1});
+
 % Seconds to measure velocity
 ws=1;           % s
 % Size of the neighbourhood of the objects:
@@ -110,23 +120,48 @@ for n=1:numel(file)
     
     % Get the most likely coordinates
     xtop=X.topx(X.topl>LikeliTh);
-    Xtop=mostlikelyvalue(xtop);
+    if isempty(xtop)
+        fprintf('\n>>Miss detected Top Field coordinates: lowering likelihood to')
+        LikeliTh=0.9*max(X.topl);
+        fprintf('%2.1f\n',LikeliTh)
+    end
+    xtop=X.topx(X.topl>LikeliTh);
     ytop=X.topy(X.topl>LikeliTh);
-    Ytop=mostlikelyvalue(ytop);
     
     xrig=X.rightx(X.rightl>LikeliTh);
-    Xrig=mostlikelyvalue(xrig);
+    if isempty(xrig)
+        fprintf('\n>>Miss detected Right Field coordinates: lowering likelihood to')
+        LikeliTh=0.9*max(X.rightl);
+        fprintf('%2.1f\n',LikeliTh)
+    end
+    xrig=X.rightx(X.rightl>LikeliTh);
     yrig=X.righty(X.rightl>LikeliTh);
-    Yrig=mostlikelyvalue(yrig);
-    
+
     xlef=X.leftx(X.leftl>LikeliTh);
-    Xlef=mostlikelyvalue(xlef);
+    if isempty(xlef)
+        fprintf('\n>>Miss detected Left Field coordinates: lowering likelihood to')
+        LikeliTh=0.9*max(X.leftl);
+        fprintf('%2.1f\n',LikeliTh)
+    end
+    xlef=X.leftx(X.leftl>LikeliTh);
     ylef=X.lefty(X.leftl>LikeliTh);
-    Ylef=mostlikelyvalue(ylef);
     
     xdow=X.downx(X.downl>LikeliTh);
-    Xdow=mostlikelyvalue(xdow);
+    if isempty(xdow)
+        fprintf('\n>>Miss detected Left Field coordinates: lowering likelihood to')
+        LikeliTh=0.9*max(X.downl);
+        fprintf('%2.1f\n',LikeliTh)
+    end
+    xdow=X.downx(X.downl>LikeliTh);
     ydow=X.downy(X.downl>LikeliTh);
+    % MODES OF THE POINTS:
+    Xtop=mostlikelyvalue(xtop);
+    Ytop=mostlikelyvalue(ytop);
+    Xrig=mostlikelyvalue(xrig);
+    Yrig=mostlikelyvalue(yrig);
+    Xlef=mostlikelyvalue(xlef);
+    Ylef=mostlikelyvalue(ylef);
+    Xdow=mostlikelyvalue(xdow);
     Ydow=mostlikelyvalue(ydow);
     
     % Horizontal
@@ -322,7 +357,7 @@ for n=1:numel(file)
     fprintf('\n *** SAVE ANIMATIONS ***')
     fprintf('\n>>animatedistance_explorations(FD,ta,pgonA,pgonB,Xnose,Ynose,fps,tnose,interA,interB,1)')
     fprintf('\n>>animate_distances(FD,dA,dB,interA,interB,disA,disB,fps,Dclose,ta,1)\n')
-    
+    fprintf('\n>>animatedistance_explorations_clean(FD,ta,HorrtDistance,VertDistance,leftLim,rightLim,topLim,bottomLim,Xnose,Ynose,fps,tnose,interA,interB,1)\n')
     
 end
 fprintf('<a href="matlab:dos(''explorer.exe /e, %s, &'')">See CSV files Here</a>\n',selpath);
