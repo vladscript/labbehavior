@@ -343,8 +343,17 @@ for n=1:numel(file)
     writetable(Rtable,[FileOutput,Name])
     disp(Rtable);
 
+    %% Save mat file
+    fprintf('\n>sving mat file: d')
+    Name=[f(1:indxmark-1),'.mat'];
+    save([FileOutput,Name]);
+    fprintf('done\n')
     %% OUPUT FIG
 %     FD=[FileOutput,[f(1:indxmark-1),'_DISTANCES_VID']];
+    % NON INTERACTION POINTS:
+    IIDXX=setdiff(1:numel(Xnose),[interA,interB]);
+    OUTTABLE=preferedsite(CenterArea,bottomLim,topLim,leftLim,rightLim,Xnose(IIDXX),Ynose(IIDXX),pgonA,pgonB);
+
     FD=[FileOutput,f(1:indxmark-1)];
     plotdots()
     fprintf('\nAdditional functions:')
@@ -360,5 +369,5 @@ for n=1:numel(file)
     fprintf('\n>>animatedistance_explorations_clean(FD,ta,HorrtDistance,VertDistance,leftLim,rightLim,topLim,bottomLim,Xnose,Ynose,fps,tnose,interA,interB,1)\n')
     
 end
-fprintf('<a href="matlab:dos(''explorer.exe /e, %s, &'')">See CSV files Here</a>\n',selpath);
+fprintf('<a href="matlab:dos(''explorer.exe /e, %s, &'')">See CSV & MAT files Here</a>\n',selpath);
 %% END
