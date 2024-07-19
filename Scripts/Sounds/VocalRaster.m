@@ -51,7 +51,7 @@ if N==1
     dims = [1 40];
     definput = {'60'};
     COLNUMinput = inputdlg(prompt,dlgtitle,dims,definput);
-    colnum=str2double(COLNUMinput);
+    rownum=round(L/str2double(COLNUMinput{1}));
 end
 % Window Raster [samples]
 prompt = {'Raster bin length [s]'};
@@ -86,9 +86,9 @@ for n=1:N
         b=round(Tb(m)*fs);
         l=DATA.CallLength_s_(m);        % length
         % V(a:b)=1;
-        Vbin(floor(a/w):floor(b/w))=1;              % If vocalization(s)
-        Nbin(floor(a/w):floor(b/w))=Nbin(floor(a/w):floor(b/w))+1;  % N vocs
-        Dbin(floor(a/w):floor(b/w))=Dbin(floor(a/w):floor(b/w))+l;  % Length
+        Vbin(ceil(a/w):ceil(b/w))=1;              % If vocalization(s)
+        Nbin(ceil(a/w):ceil(b/w))=Nbin(ceil(a/w):ceil(b/w))+1;  % N vocs
+        Dbin(ceil(a/w):ceil(b/w))=Dbin(ceil(a/w):ceil(b/w))+l;  % Length
     end
     if N>1
         Vall(n,:)=Vbin;
@@ -98,16 +98,16 @@ for n=1:N
 end
 %% Outputs
 if N==1
-    Vraster=reshape(Vbin,colnum,[])';
-    Draster=reshape(Dbin,colnum,[])';
-    Nraster=reshape(Nbin,colnum,[])';
-    Plot_Raster(Vraster,w/fs)
-    Plot_Raster(Draster,w/fs)
-    Plot_Raster(Nraster,w/fs)
+    Ncols=L/(w/fs)/rownum;
+    Vraster=reshape(Vbin,Ncols,rownum)';
+    Draster=reshape(Dbin,Ncols,rownum)';
+    Nraster=reshape(Nbin,Ncols,rownum)';
+    Plot_Raster(Vraster,w/fs);
+    Plot_Raster(Draster,w/fs);
+    Plot_Raster(Nraster,w/fs);
 else
-    Plot_Raster(Vall,w/fs)
-    Plot_Raster(Lall,w/fs)
-    Plot_Raster(Nall,w/fs)
-    
-    
+    Plot_Raster(Vall,w/fs);
+    Plot_Raster(Lall,w/fs);
+    Plot_Raster(Nall,w/fs);
+    disp(table([1:N]',Archs','VariableNames',{'Rows','File Names'}));
 end

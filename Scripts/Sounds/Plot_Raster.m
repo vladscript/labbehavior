@@ -74,7 +74,8 @@ for i=1:C
     if ~isempty(activeframes(activeframes>0))
         nf=1;
         xposition(1)=activeframes(1);
-        xposition(2)=1;
+        % xposition(2)=1;
+        xposition(2)=bins;
         val=R(i,activeframes(1));
         
         while nf<numel(activeframes)
@@ -104,7 +105,7 @@ for i=1:C
                 end
                 colorspike=CM(ncolor,:);
             end
-            rectangle('Position',[xposs(1),ypositon(1),...
+            rectangle('Position',[bins*xposs(1)-bins,ypositon(1),...
                     xposs(2),ypositon(2)],'Curvature',[0,0],...
                     'EdgeColor',colorspike,...
                     'FaceColor',colorspike);
@@ -112,7 +113,7 @@ for i=1:C
             % Restart xposition values
             % xposition(1)=activeframes(nx+1)-0.5;
             xposition(1)=activeframes(nx+1);
-            xposition(2)=1;
+            xposition(2)=bins;
             if nx<numel(activeframes)-1
                 val=R(i,activeframes(nx+1));
             end
@@ -128,19 +129,24 @@ if C>0
     axis([0,size(R,2)+1,1-TransientHight/2,C+TransientHight/2])
 end
     
-ylabel('Mouse/Segments')
+ylabel('Files/Segments')
 xlabel(xstring)
 set(ax1,'Box','off')
 yticks=indexes';
 set(ax1,'YTick',1:stepy:C)
 set(ax1,'YTickLabel',yticks(1:stepy:C))
 set(ax1,'TickLength',[0,0])
+ax1.YDir='reverse';
 
 if N>0
-    for j=1:numel(ax1.XTick)
-        ax1.XTickLabel{j}=num2str(ax1.XTick(j)*bins);
-    end
+%     for j=1:numel(ax1.XTick)
+%         ax1.XTickLabel{j}=num2str((ax1.XTick(j)-1)*bins);
+%     end
 end
+
+axis([0,size(R,2)*bins,TransientHight/2,size(R,1)+3*TransientHight/4])
+
+% ax1.XTickMode='manual';
 
 if ~bincol                
     colormap(CM);
