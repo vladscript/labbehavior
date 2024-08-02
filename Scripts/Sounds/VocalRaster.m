@@ -86,9 +86,14 @@ for n=1:N
         b=round(Tb(m)*fs);
         l=DATA.CallLength_s_(m);        % length
         % V(a:b)=1;
-        Vbin(ceil(a/w):ceil(b/w))=1;              % If vocalization(s)
-        Nbin(ceil(a/w):ceil(b/w))=Nbin(ceil(a/w):ceil(b/w))+1;  % N vocs
-        Dbin(ceil(a/w):ceil(b/w))=Dbin(ceil(a/w):ceil(b/w))+l;  % Length
+        inicio=ceil(a/w);
+        fin=ceil(b/w);
+        if fin>L*fs/w
+            fin=round(L*fs/w);
+        end
+        Vbin(inicio:fin)=1;              % If vocalization(s)
+        Nbin(inicio:fin)=Nbin(inicio:fin)+1;  % N vocs
+        Dbin(inicio:fin)=Dbin(inicio:fin)+l;  % Length
     end
     if N>1
         Vall(n,:)=Vbin;
