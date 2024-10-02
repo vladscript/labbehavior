@@ -55,7 +55,11 @@ switch N
     case 2
         bins=varargin{1};
         xstring='t [s]';
-        stepy=varargin{2};
+        stepy=1;
+        CM=varargin{2};
+        strcblabel='Type';
+        bines=bines(bines>0);
+        ColorTypeVocals; % Get Types List
     otherwise
         fprintf('\n Unrecognized #input parameters\n')
 end
@@ -94,7 +98,6 @@ for i=1:C
             % Create Rectangle *************************
             xposs=xposition;
             if bincol
-                % If there is Colocalized Cells
                 colorspike=CM(1,:);
             else
                 ncolors=find(val>=bines);

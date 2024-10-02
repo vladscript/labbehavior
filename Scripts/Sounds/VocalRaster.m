@@ -19,7 +19,7 @@
 % 
 clear; clc;
 % Read multiple file in a folder
-[A,C]=uigetfile('*.xlsx','MultiSelect','on');
+[A,Direction]=uigetfile('*.xlsx','MultiSelect','on');
 if ischar(A)
     N=1;
     Archs{1}=A;
@@ -61,7 +61,10 @@ definput = {'0.5'};
 COLNUMinput = inputdlg(prompt,dlgtitle,dims,definput);
 w=str2double(COLNUMinput)*fs;
 % w=Ns*fs;
-
+% Color Map for 
+ColorTypeVocals;
+CMtypes =cbrewer('qual','Paired',numel(Types));
+HayClass=false;
 %% Main Loop
 if N>1
     Vall=zeros(N,L*fs/w);
@@ -70,7 +73,7 @@ if N>1
 end
 for n=1:N
     fprintf('\n>Loading %s, ',Archs{n})
-    DATA=readtable([C,Archs{n}]);
+    DATA=readtable([Direction,Archs{n}]);
     fprintf('done.\n, ')
     % Use Begin & End Times
     Ta=DATA.BeginTime_s_;
@@ -79,12 +82,21 @@ for n=1:N
     Dbin=zeros(1,L*fs/w); % Length of vocalization(s)
     Vbin=zeros(1,L*fs/w); % Binary (there was or not vocalizations)
     Nbin=zeros(1,L*fs/w); % Number of vocalizations
+    if ismember('Classification',DATA.Properties.VariableNames)
+        HayClass=true;
+        C=categorical(DATA.Classification);
+        Cbin=zeros(1,L*fs/w); % Types of Vocalizations
+        [~,indxcols]=ismember(C,Types);
+    else
+        HayClass=false;
+    end
     % Vocalizations Loop
     for m=1:numel(Ta)
         fprintf('\n>Vocal #%i',m)
         a=round(Ta(m)*fs);
         b=round(Tb(m)*fs);
         l=DATA.CallLength_s_(m);        % length
+        coltype=indxcols(m);
         % V(a:b)=1;
         inicio=ceil(a/w);
         fin=ceil(b/w);
@@ -94,11 +106,17 @@ for n=1:N
         Vbin(inicio:fin)=1;              % If vocalization(s)
         Nbin(inicio:fin)=Nbin(inicio:fin)+1;  % N vocs
         Dbin(inicio:fin)=Dbin(inicio:fin)+l;  % Length
+        if HayClass
+            Cbin(inicio:fin)=coltype;  % Color
+        end
     end
     if N>1
         Vall(n,:)=Vbin;
         Nall(n,:)=Nbin;
         Lall(n,:)=Dbin;
+        if HayClass
+            Call(n,:)=Cbin;
+        end
     end
 end
 %% Outputs
@@ -110,9 +128,26 @@ if N==1
     Plot_Raster(Vraster,w/fs);
     Plot_Raster(Draster,w/fs);
     Plot_Raster(Nraster,w/fs);
+    if HayClass
+        Craster=reshape(Cbin,Ncols,rownum)';
+        Plot_Raster(Craster,w/fs,CMtypes);
+        Colfig=gcf;
+        Colfig.Children(1).FontSize=7;
+        Colfig.Children(1).TicksMode='manual';
+        Colfig.Children(1).Ticks=(1:numel(Types))/numel(Types)-0.5/numel(Types);
+        Colfig.Children(1).TickLabels=Types;
+    end
 else
     Plot_Raster(Vall,w/fs);
     Plot_Raster(Lall,w/fs);
     Plot_Raster(Nall,w/fs);
+    if HayClass
+        Plot_Raster(Call,w/fs,CMtypes);
+        Colfig=gcf;
+        Colfig.Children(1).FontSize=7;
+        Colfig.Children(1).TicksMode='manual';
+        Colfig.Children(1).Ticks=(1:numel(Types))/numel(Types)-0.5/numel(Types);
+        Colfig.Children(1).TickLabels=Types;
+    end
     disp(table([1:N]',Archs','VariableNames',{'Rows','File Names'}));
 end
