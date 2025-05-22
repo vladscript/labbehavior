@@ -1,200 +1,565 @@
-%% ONE FOLDER BY ONE
-clear
-close all
-clc
-% Read Session Folder
-GNGfolder=uigetdir(pwd);
-%% Sensor Data
-task=getdatagng(GNGfolder);
-rw= task(:,1);
-pn= task(:,4);
-% 1: rewards
-% 2: movement
-% 3: licks
-% 4: punishment
-% 5: stimuli: 1 Go, 2: NoGo
-% 6: nothing
-%% Stimuli info
-matfiles=ls([GNGfolder,filesep,'*.mat']);
-Nmatf=size(matfiles,1);
-if size(matfiles,1)>1
-    MF=matfiles;
-else
-    MF{1}=matfiles;
+%% READ FOLDERS ONE BY ONE
+% SETUP
+% Mouse Folder must be contain Sessions Folders
+clear;
+checkFolders=true;
+Tall=table;
+Nsec=1;     % Pre stimulus time [s]
+ws=100;     % Sliding Window [ms]
+cylrad=5;   % Cylinder Radius[cm]
+ol=0;       % Window OverLapping (Speed and Licking Rate) [%]
+fs=1000;    % [Hz] NIDAQ  Sampling Frequency
+    PreStim=round(Nsec*fs); % Samples Pre Stimulus
+
+% GNGfolder=uigetdir(pwd);
+%% Get Session Folders of X- mouse
+GNGfolder=uigetdir(pwd,'Mouse Sessions Folder');
+list=dir(GNGfolder);
+OKdir=[];
+ListNames={};
+aux=1;
+for i=1:numel(list)
+    if list(i).isdir  && (~or(strcmp('.',list(i).name),strcmp('..',list(i).name)))
+        OKdir=[OKdir;i];
+        ListNames{aux}=list(i).name;
+        ListDirs{aux}=list(i).folder;
+        aux=aux+1;
+    else
+        fprintf('*')
+    end
 end
-% for n=1:Nmatf
-%     MF(n)=matfiles
-% end
-[f,ok]=listdlg('ListString',MF);
-load([GNGfolder,filesep,MF(f,:)])
-% Variable 'parameters'
-%% Stim Analysis
-STI=parameters.sequence; % Orientations|Contrasts
-ors=STI(:,1);
-stimis=unique(ors);
-stimseq=categorical(size(ors));
-% Transitions
-% Rows Current
-% Columns Next
-MATTRAN=zeros(numel(stimis));
-for i=1:numel(ors)-1
-    Curr=find(stimis==ors(i));
-    Next=find(stimis==ors(i+1));
-    MATTRAN(Curr,Next)=MATTRAN(Curr,Next)+1;
-end
-disp('Transition Matrix:')
-disp(MATTRAN);
-%% Task Performance
-disp('Hits/Performancwe/Water')
-[Hits,Performance,total_water]=cal_performance_LCR(task);
+fprintf('\n')
+[foldsess,ok]=listdlg('PromptString',{'Select Folder Sessions',...
+        'Sessions Data',''},...
+        'SelectionMode','multiple','ListString',ListNames);
+FolderNameSessions=ListNames(foldsess);
+FolderSessions=ListDirs(foldsess);
+%% Get session-mat files
+MatFileSessions={};
+for i=1:numel(foldsess)
+    % Session Intel
+    GNGfolder=[FolderSessions{i},filesep, FolderNameSessions{i}];
+    IndxssSep=strfind(GNGfolder,filesep);
+    MouseIDc=GNGfolder(IndxssSep(end-1)+1:IndxssSep(end)-1);
+    DateSess=GNGfolder(IndxssSep(end)+1:end);
+    Datec=DateSess(1:find(DateSess=='-',1)-1);
+    Sesionc=DateSess(find(DateSess=='-',1)+1:end);
+    % GUI to corroborate
+    answer={};
+    while isempty(answer)
+        prompt = {'Mouse ID:','Date: YY/MM/DD','Session:'};
+        dlgtitle = 'Check';
+        dims = [1 35];
+        definput = {MouseIDc,Datec,Sesionc};
+        answer = inputdlg(prompt,dlgtitle,dims,definput);
+    end
 
-%% RASTERIZE
-% onsets of Go/NoGo in 
-TheStims=task(:,5);
-Onsets=find(diff(TheStims)>0.95);
-OnsetsNoGo=Onsets(TheStims(Onsets+1)>1.7);
-OnsetsGo=setdiff(Onsets,OnsetsNoGo);
-fprintf(">Found: %i Go and %i No Go stimulus\n",numel(OnsetsGo),numel(OnsetsNoGo));
-
-% 5: stimuli: 1 Go, 2: NoGo
-Thelicks=task(:,3);
-avginter=round(mean(Onsets));
-
-LickMAtrix=zeros(numel(Onsets),round(max(diff(Onsets))));
-
-for n=1:numel(Onsets)
-    a=Onsets(n);
-    if n==numel(Onsets)
-        b=a+avginter-1;
-        if b>numel(Onsets)
-            b=numel(Onsets);
+    % Final step:
+    MouseID{i}=answer{1};
+    Date{i}=answer{2};
+    Sesion{i}=answer{3};
+    matfiles=ls([FolderSessions{i},filesep,FolderNameSessions{i},filesep,'*.mat']);
+    Nmatf=size(matfiles,1);
+    if size(matfiles,1)>1
+        MF=matfiles;
+        if ischar(MF)
+            MFchar=MF;
+            MF={};
+            for c=1:size(MFchar,1)
+                MF{c}=MFchar(c,~isspace(MFchar(c,:)));
+            end
         end
     else
-        b=Onsets(n+1);
+        MF{1}=matfiles;
     end
-    LikSegment=Thelicks(a:b);
-    LickMAtrix(n,LikSegment>2.5)=1;
 
-    
+    [f,ok]=listdlg('PromptString',{'Select a MAT file.',...
+        'Session Intel.',''},...
+        'SelectionMode','single','ListString',MF);
+    if ok
+        MatFileSessions{i}=MF{f};
+    else
+        MatFileSessions{i}='';
+    end
 end
-%% PLOT RASTER (fast)
-
-figure
-subplot(131)
-imagesc(LickMAtrix)
-title('Complete')
-subplot(132)
-imagesc(LickMAtrix(ors==stimis(1),:))
-title(sprintf('Stim: %i °',stimis(1)))
-subplot(133)
-imagesc(LickMAtrix(ors==stimis(2),:))
-title(sprintf('Stim: %i °',stimis(2)))
-
-CM=[1 1 1; 0 0 0];
-colormap(CM);
-
-% Hits
-% Correct Rejects
-% False Alarmas
-% Incorrect Rejects
-
-
-
-
-     %% PERFORMANCE ANALYSIS
-%     [oriout,go_stim,nogo_stim,corrected_licks,...
-%     Hits,FA,CR,misses,performance,...
-%     task,pos_ori,dif_times,go_posts,nogo_posts,licks_count]=...
-%     cal_performance_LCR_GAMAf(dsub,currFo,noisy);
-%     
-%     points_errased=1:50;
-%     raw_licks=task(:,3);
-%     %             raw_licks=BU;
-%     for point_e= points_errased
-%         [corrected_licks]=correct_licks(raw_licks,point_e);
-%         licks_count(point_e)=sum(find(diff(corrected_licks))>0);
+%% Processing
+% while checkFolders
+for i=1:numel(FolderSessions)
+    %% Sensor Data and Metadata
+    % 1: rewards
+    % 2: movement
+    % 3: licks
+    % 4: punishment
+    % 5: stimuli: 1 Go, 2: NoGo
+    % 6: nothing
+    % Read Session Folder
+    %GNGfolder=uigetdir(pwd);
+    GNGfolder=[FolderSessions{i},filesep, FolderNameSessions{i}];
+    task=getdatagng(GNGfolder);
+    rw= task(:,1);
+    mov= task(:,2);
+    Thelicks=task(:,3);
+    pn= task(:,4);
+%     % Session Intel
+%     IndxssSep=strfind(GNGfolder,filesep);
+%     MouseID=GNGfolder(IndxssSep(end-1)+1:IndxssSep(end)-1);
+%     DateSess=GNGfolder(IndxssSep(end)+1:end);
+%     Date=DateSess(1:find(DateSess=='-',1)-1);
+%     Sesion=DateSess(find(DateSess=='-',1)+1:end);
+%     % GUI to corroborate
+%     answer={};
+%     while isempty(answer)
+%         prompt = {'Mouse ID:','Date: YY/MM/DD','Session:'};
+%         dlgtitle = 'Check';
+%         dims = [1 35];
+%         definput = {MouseID,Date,Sesion};
+%         answer = inputdlg(prompt,dlgtitle,dims,definput);
 %     end
-%     th_licks=find(diff(licks_count)==0);
-%     %             th_licks=5e2;
-%     th_licks=points_errased(th_licks(1));
-%     [corrected_licks]=correct_licks(raw_licks,th_licks);
-%     bin_data_go=corrected_licks';
-%     lick_bin=length(bin_data_go);
-%     [GF]=Lick_Freq_Analysis(bin_data_go,lick_bin,'Licking-spectra-full-session')
-%     
-%     time_before=1;
-%     time_before=time_before*1e3;
-%     lick_bin=100;
-%     Fs=1e3;
-%     treadmill=task(:,2);
-%     lenpos=min([length(go_posts) length(nogo_posts)]);
-%     [speed_raw,speed_smooth]= getLocSpeed(treadmill,1e3,500,0);
-%     [all_data_parceled,data_parcel_go,data_parcel_nogo,treadmill_go,treadmill_nogo,RTs]=...
-%         lick_parcel_LCR(pos_ori,    corrected_licks,    time_before,dif_times,go_posts(1:lenpos),nogo_posts(1:lenpos),speed_smooth);
-%     points_after=length(all_data_parceled);
-%     %         points_after=round((length(all_data_parceled)-(time_before))/1e3);
-%     points_after=floor((length(all_data_parceled))/1e3);
-%     points_after=points_after*1e3;
-%     %         Tr_len=time_after+time_before;
-%     Tr_len=points_after;
-%     %         Tr_len=1e4;
-%     if Tr_len>1e4
-%         Tr_len=1e4;
-%         endsGo=Tr_len-time_before;
-%         endsNoGo=Tr_len-time_before;
-%         points_after=Tr_len-time_before;
+%     % Final step:
+%     MouseID=answer{1};
+%     Data=answer{2};
+%     Sesion=answer{3};
+    % Stimuli info: read MAT file from acquisition
+%     matfiles=ls([GNGfolder,filesep,'*.mat']);
+%     Nmatf=size(matfiles,1);
+%     if size(matfiles,1)>1
+%         MF=matfiles;
+%         if ischar(MF)
+%             MFchar=MF;
+%             MF={};
+%             for c=1:size(MFchar,1)
+%                 MF{c}=MFchar(c,~isspace(MFchar(c,:)));
+%             end
+%         end
 %     else
-%         %             try
-%         endsGo=Tr_len;
-%         endsNoGo=Tr_len;
-%         Trial_length=(Tr_len)*(1/1000);
+%         MF{1}=matfiles;
 %     end
-%     data_go=data_parcel_go(:,1:Tr_len);
-%     data_nogo=data_parcel_nogo(:,1:Tr_len);
-%     disp('Data parcelation done')
-% 
-%     lick_bin=100;
-%     Fs=1e3;
-%     numTrG=1:size(data_go,1);
-%     numTrNG=1:size(data_nogo,1);
+    clc%% Task Performance: 
+    disp('Hits/Performance/Water')
+    % 3th-party previous function:
+    [Hits,Performance,total_water,dataperf]=cal_performance_LCR(task);
+    % Recovered filtered data: dataperf
+    STIMRESPONSE=evalgonogo(dataperf);
+    % Check Onsets accoridng to STIMRESPONSE
+    StimsOK=find(~isundefined(STIMRESPONSE(:,1))); % omit undefined cases
+    STIMRESPONSE=STIMRESPONSE(StimsOK, :);
+    % Categorical STIM-RESPONSE
+    OUTPUT=winperfor(STIMRESPONSE,0); % Instaneous Performace
+    FInsta=gcf;
+    ti=title([[MouseID{i},'-',Sesion{i}]]);
+    ti.Interpreter='none';
+%     [f,ok]=listdlg('PromptString',{'Select a MAT file.',...
+%         'Session Intel.',''},...
+%         'SelectionMode','single','ListString',MF);
+    
+    % Checking Data    
+    if ~isempty(MatFileSessions{i})
+        load([GNGfolder,filesep,MatFileSessions{i}]);
+        STI=parameters.sequence; % Orientations|Contrasts
+        ORI=categorical(STI(:,1),[0,90],{'Go', 'NoGo'});
+        if isempty(setdiff(ORI,STIMRESPONSE(:,1)))
+            disp('Correct sequence of stimuli')
+        else
+            disp('Check stimuli sequence!!!!!')
+        end
+    else
+        fprintf('\n>No task data, using arduino s\n')
+        STIstr=STIMRESPONSE(:,1);
+        STI=zeros(size(STIstr));
+        STI(STIstr=='Go')=1;
+        % Get paramaters from Arduino Data
+    end
+    ors=STI(:,1); % numerical sequence of stim degrees
+    stimis=unique(ors); % unique stimulus
+    % Variable 'parameters'
+    %% Stim Analysis: how random?
+    % Transitions
+    % Rows Current
+    % Columns Next
+%     MATTRAN=zeros(numel(stimis));
+%     for k=2:numel(ors)
+%         Curr=find(stimis==ors(k));      % Current   t
+%         Preb=find(stimis==ors(k-1));    % Previous  t-1
+%         MATTRAN(Curr,Preb)=MATTRAN(Curr,Preb)+1; % Increase frec
+%         % EntropyRate
+%         FrecStims=sum(MATTRAN,1);
+%         mu=sum(MATTRAN,1)./(sum(MATTRAN(:)));
+%         Hrate(k)=0;
+%         for i=1:numel(mu)
+%             A(:,i)=MATTRAN(:,i)./FrecStims(:,i);
+%             h(i)=0;
+%             for j=1:size(A,2)
+%                 h(i)=h(i)-A(i,j)*log2(A(i,j));
+%             end
+%             Hrate(k)=Hrate(k)+mu(i)*h(i);
+%         end
+%     end
 %     
+    
+%     B=zeros(2,numel(ors));
+%     Gofrq=0;
+%     NoGofrq=0;
+%     for i=1:numel(ors)
+%     % Emission Porbability/ Observation Probabilities
+%         if ors(i)==stimis(1)
+%             Gofrq=Gofrq+1;
+%             
+%         else
+%             NoGofrq=NoGofrq+1;
+%             
+%         end
+%         B(2,i)=NoGofrq/i; % Go Probability at each State
+%         B(1,i)=Gofrq/i; % Go Probability at each State
+%         Entrpy(i)=-sum([NoGofrq/i, Gofrq/i].*log2([NoGofrq/i, Gofrq/i])); % Entro
+%     end
 %     
-%     %%Licking_Rate_Analysis
-%     time_after=1e4;
-%     aT=-time_before+lick_bin:lick_bin:time_after-time_before;
-%     aT=aT/Fs;
-%     [binsGo,binsNoGo,go_lick_DownSampled,binary_begs_Go,binary_begs_NoGo,LickDif]=lick_density(data_go,data_nogo,lick_bin);
-%     
-%     %%
-%     % Pre-stimuli rate
-%     miOne=find(aT==-.9);
-%     miO=find(aT==0);
-%     preRate_G=mean(binsGo(miOne:miO));
-%     preRate_NG=mean(binsNoGo(miOne:miO));
-%     
-%     %Anticipatory rate
-%     sec_Anticip=1;
-%     firstBin=find(aT==sec_Anticip);
-%     lastBin=find(aT==sec_Anticip+1);
-%     secBin=2;
-%     binDos=find(aT==secBin);
-%     binTres=find(aT==secBin+1);
-%     mn_Go_LickRate=mean(binsGo(firstBin:lastBin));
-%     mn_NoGo_LickRate=mean(binsNoGo(firstBin:lastBin));
-%     
-%     % Reward Rate
-%     RewRate=mean(binsGo(binDos:binTres));
-%     PunRate=mean(binsNoGo(binDos:binTres));
-%     
-%     PreIndexGo=mn_Go_LickRate/RewRate;
-%     Go_Rates=[preRate_G mn_Go_LickRate RewRate];
-%     Nogo_Rates=[preRate_NG mn_NoGo_LickRate PunRate];
-%     LickIncThr=mean(diff(binsGo)+(2*std(diff(binsGo))));
-%     LickDecThr=mean(diff(binsGo)-(2*std(diff(binsGo))));
-%     disp('Licking behavior analyzed')
-%     lick_bin=100;
-%     orderTrs='Chronological trials';
-%     Raster_Licks(data_go,time_before,time_after,orderTrs,lick_bin,binsGo,data_nogo,binsNoGo)
-%     cd ..
-%     cd ..
-% end
+    [MATTRAN,Hrate,Entrpy]=howrandom(ors);
+    
+    NansHrate=find(isnan(Hrate));
+    [MaxH, MaxHTrail]=max(Hrate);
+    [MinH, MinHTrail]=min(Hrate((NansHrate(end)+1:end)));
+    MinHTrail=MinHTrail+NansHrate(end)+1;
+
+    MT=array2table(MATTRAN,'RowNames',{'Go_t';'NoGo_t'},'VariableNames',{'Go_t+1','NoGo_t+1'});
+    disp(MT)
+    % %% HMM
+    % N = 2;  % Adjust based on your data
+    M = numel(ors);  % Adjust based on your data
+    A = MATTRAN/sum(MATTRAN(:));
+    Prepe=sum(A([1,4]));
+    Ptran=sum(A([2,3]));
+    pdfE=histogram(Entrpy);
+    asyEnt=pdfE.BinEdges(end-1);
+    NtrialStblEntorpy=find(smooth(Entrpy)>=asyEnt,1);
+
+    [BestPerfo,BestTrial]=max(OUTPUT.InstaPerfor(NtrialStblEntorpy:end));
+    [WorstFA,WorstTrial]=max(OUTPUT.InstaFAc(NtrialStblEntorpy:end));
+    [BeststDeltaP,BestImproveTrail]=max(OUTPUT.DeltaPerfo(NtrialStblEntorpy:end));
+    BestTrial=BestTrial+NtrialStblEntorpy;
+    WorstTrial=WorstTrial+NtrialStblEntorpy;
+    BestImproveTrail=BestImproveTrail+NtrialStblEntorpy;
+    %% CHECK STIMULUS AS SAVED by ADQUISITION
+%     % Entropy Rate (Wikipedia's Def)
+%     mu=sum(MATTRAN,1)./(sum(MATTRAN(:)));
+%     HrateW=0;
+%     for i=1:numel(mu)
+%         h(i)=0;
+%         for j=1:size(A,2)
+%             h(i)=h(i)-A(i,j)*log2(A(i,j));
+%         end
+%         HrateW=HrateW+mu(i)*h(i);
+%     end
+    
+    % plot(Entrpy);
+    % hold on
+    % plot(smooth(Entrpy),'LineWidth',2);
+    % [MaxEntropy, Position]=max(smooth(Entrpy));
+    % Correlation beteen Entropy and Performance?
+    % [Rfa,Pfa]=corr(Entrpy',OUTPUT.CumFAPerc,'rows','complete');
+    % [Rhit,Phit]=corr(Entrpy',OUTPUT.CumHitsPerc,'rows','complete');
+    % [Rperf,Pperf]=corr(Entrpy',OUTPUT.CumFPerfoPerc,'rows','complete');
+    % scatter(OUTPUT.CumFAPerc,Entrpy',[],1:numel(Entrpy),'filled')
+    
+    % Autocorrelation of the stimulo
+    orsInt=ones(size(ors));
+    orsInt(ors==90)=2;
+    % ACF=autocorr(orsInt,numel(ors)-1);
+    ACF=autocorr(ors,numel(ors)-1);
+    ACFlagone=ACF(2);
+    % % % figure
+    % % % subplot(1,2,1)
+    % % % plot(Entrpy);
+    % % % xlabel('Trial')
+    % % % ylabel('Entropy [Bits]')
+    % % % grid on;
+    % % % subplot(1,2,2)
+    % % % imagesc(A)
+    % % % Ax=gca;
+    % % % Ax.XTickMode='manual';
+    % % % Ax.YTickMode='manual';
+    % % % Ax.XTick=[1,2];
+    % % % Ax.YTick=[1,2];
+    % % % Ax.XTickLabel={'Go','No Go'};
+    % % % Ax.YTickLabel={'Go','No Go'};
+    % % % ylabel('Previous')
+    % % % xlabel('Next')
+    % % % colormap gray
+    % % % colorbar
+    % [estA, estB] = hmmtrain(orsInt, A, B, 'Tolerance', 1e-4, 'Maxiterations', 100,'Verbose',true);
+    % 
+    % disp(estA);
+    % disp(estB);
+    %% MOVEMENT PRE-PROCESSING
+    
+    [Z,Zs,Turns,RZ]=procemov(mov);
+    % Z: Sensor accumulated Turns Displacement
+    % Zs: Smoothed Z
+    % Turns: Frames where complete turns Sign: direction
+    %  RZ: Volts Amplitude Changes of Direction
+    Turns(end)=Turns(end)-1; % OK
+    Volts2piRad=floor(max(RZ)); % Volts per Turn
+    NGiros=sum(RZ>Volts2piRad);
+    
+    [D,Spped]=voltmovtocm(Zs,Turns,RZ,cylrad,ws,fs);
+    TotalDistance=round(D(end));
+    
+    %% RASTERIZE LICK & SPEED
+    % onsets of Go/NoGo in 
+    LickThreshold=1.5;
+    TheStims=task(:,5);
+    Onsets=find(diff(TheStims)>0.5);
+    Offsets=find(diff(-TheStims)>0.5);
+    StimDur=Offsets(1:min([numel(Offsets),numel(Onsets)]))-Onsets(1:min([numel(Offsets),numel(Onsets)]));
+    StimLength=abs(round(round(mean(StimDur))/fs)*1000);
+    OnsetsNoGo=Onsets(TheStims(Onsets+1)>1.7);
+    OnsetsGo=setdiff(Onsets,OnsetsNoGo);
+    fprintf(">Found: %i Go and %i No Go stimulus\n",numel(OnsetsGo),numel(OnsetsNoGo));
+    Onsets=find(diff(TheStims)>0.95)-PreStim;
+    % 5: stimuli: 1 Go, 2: NoGo
+    % avginter=round(mean(Onsets));
+    avginter=round(mean(diff(Onsets)));
+%     LickMatrix=zeros(numel(Onsets),round(max(diff(Onsets))));
+    LickMatrix=zeros(numel(ors),round(mean(diff(Onsets))));
+%     MovMatrix=zeros(numel(Onsets),round(max(diff(Onsets))));
+%     MovMatrix=zeros(numel(ors),round(max(diff(Onsets))));
+    MovMatrix=zeros(numel(ors),round(mean(diff(Onsets))));
+    SpeMatrix=[];
+    
+    for n=1:numel(Onsets)
+        a=Onsets(n);
+        if n==numel(Onsets)
+            b=a+avginter-1;
+            if b>numel(Onsets)
+                b=numel(Onsets);
+            end
+        else
+            b=Onsets(n+1)-1;
+        end
+        LikSegment=Thelicks(a:b);
+        MovSegment=D(a:b); 
+        LickMatrix(n,LikSegment>LickThreshold)=1;
+        MovMatrix(n,1:numel(MovSegment))=MovSegment;
+        VelSement=get_velocity_interval(MovSegment,ws/fs,fs);
+        VS=VelSement';
+        if n>1
+            if size(VS,2)<size(SpeMatrix,2)
+                VS=[VS,zeros(1,size(SpeMatrix,2)-size(VS,2))];
+            elseif size(VS,2)>size(SpeMatrix,2)
+                VS=[VS(1:size(SpeMatrix,2))];
+            end
+        end
+        SpeMatrix=[SpeMatrix;VS];
+    end
+    % Features:
+    LicksGo=LickMatrix(ors==stimis(1),:);
+    LicksNoGo=LickMatrix(ors==stimis(2),:);
+    LickPercGO=100*sum(LicksGo(:))/(sum(LicksGo(:))+sum(LicksNoGo(:)));
+    LickPercNoGO=100*sum(LicksNoGo(:))/(sum(LicksGo(:))+sum(LicksNoGo(:)));
+    %% PLOT RASTER (fast vis)
+    % Input (Lick Matrix,ors,)
+    if size(LickMatrix,1)<numel(ors)
+        LickMatrix(end+1,:)=zeros(size(LickMatrix(1,:)));
+        fprintf('*')
+    end
+    if size(SpeMatrix,1)<numel(ors)
+        SpeMatrix(end+1,:)=zeros(size(SpeMatrix(1,:)));
+        fprintf('x')
+    end
+    figure
+    A1=subplot(131);
+    imagesc(LickMatrix)
+    A1.XTick=0:fs:size(LickMatrix,2);
+    for n=1:numel(A1.XTick)
+        A1.XTickLabel{n}=num2str(A1.XTick(n)-PreStim);
+    end
+    hold on;
+    rectangle('Position',[PreStim 0 StimLength size(LickMatrix,1)],'EdgeColor','k')
+    ti=title([[MouseID{i},'-',Sesion{i}]]);
+    ti.Interpreter='none';
+    ylabel('Trials')
+    
+    A2=subplot(132);
+    
+    imagesc(LickMatrix(ors==stimis(1),:))
+    A2.XTick=0:fs:size(LickMatrix,2);
+    for n=1:numel(A2.XTick)
+        A2.XTickLabel{n}=num2str(A2.XTick(n)-PreStim);
+    end
+    hold on;
+    rectangle('Position',[PreStim 0 StimLength size(LickMatrix(ors==stimis(1),:),1)],'EdgeColor','k')
+    title(sprintf('Stim: %i °',stimis(1)))
+    xlabel('Peri-Stimuli [ms]')
+    A3=subplot(133);
+    imagesc(LickMatrix(ors==stimis(2),:))
+    A3.XTick=0:fs:size(LickMatrix,2);
+    for n=1:numel(A3.XTick)
+        A3.XTickLabel{n}=num2str(A3.XTick(n)-PreStim);
+    end
+    hold on;
+    rectangle('Position',[PreStim 0 StimLength size(LickMatrix(ors==stimis(2),:),1)],'EdgeColor','k');
+    title(sprintf('Stim: %i °',stimis(2)))
+    CM=[1 1 1; 0 0 0];
+    colormap(CM);
+    %% SORT BY:
+    % % % % Hits
+    % % % % Correct Rejects
+    % % % % False Alarmas
+    % % % % Incorrect Rejects
+    % % % Sorting=[find(STIMRESPONSE(:,2)=='Hit');find(STIMRESPONSE(:,2)=='Miss');...
+    % % %     find(STIMRESPONSE(:,2)=='CR');find(STIMRESPONSE(:,2)=='FA')];
+    % % % figure
+    % % % imagesc(LickMAtrix(Sorting,:))
+    % % % title('Complete')
+    % % % colormap(CM);
+    %% LICK RATE
+    [T,R]=lickrate(LickMatrix,ws,ol,fs);
+%     LRfig=figure;
+    Rgo=R(ors==stimis(1),:);
+    Rnogo=R(ors==stimis(2),:);
+    subplot(131)
+    plot(T-PreStim/fs,R,'Color',[0.9 0.9 0.9]);
+    hold on;
+    plot(T-PreStim/fs,mean(R),'LineWidth',2); 
+    rectangle('Position',[PreStim/fs 0 StimLength/fs max(R(:))],'EdgeColor','k');
+    grid on;
+    ti=title([[MouseID{i},'-',Sesion{i}]]);
+    ti.Interpreter='none';
+    ylabel('Lick rate (Hz)')
+    subplot(132)
+    plot(T-PreStim/fs,R(ors==stimis(1),:),'Color',[0.95 0.95 0.95]);
+    hold on;
+    plot(T-PreStim/fs,mean(R(ors==stimis(1),:)),'LineWidth',2); 
+    rectangle('Position',[PreStim/fs 0 StimLength/fs max(Rgo(:))],'EdgeColor','k');
+    grid on;
+    title(sprintf('Stim: %i °',stimis(1)))
+    subplot(133)
+    plot(T-PreStim/fs,R(ors==stimis(2),:),'Color',[0.95 0.95 0.95]);
+    hold on;
+    plot(T-PreStim/fs,mean(R(ors==stimis(2),:)),'LineWidth',2); 
+    rectangle('Position',[PreStim/fs 0 StimLength/fs max(Rnogo(:))],'EdgeColor','k');
+    grid on;
+    title(sprintf('Stim: %i °',stimis(2)))
+    LRfig.Position=[889.8000 416.2000 560.0000 199.2000];
+    %% MOVEMENT PLOTS
+    % % % figure
+    % % % subplot(211)
+    % % % tD=linspace(0,numel(D)/fs/60,numel(D)); % MINUTES
+    % % % plot(tD,D)
+    % % % grid on;
+    % % % ylabel('Distance [cm]')
+    % % % xlabel('Time [min]')
+    % % % twin=linspace(0,numel(mean(SpeMatrix))*ws/1000,numel(mean(SpeMatrix)));
+    % % % subplot(234)
+    % % % plot(twin-PreStim/1000,mean(SpeMatrix))
+    % % % axis([min(twin-PreStim/1000),max(twin-PreStim/1000),0,1.1*max(SpeMatrix(:))]);
+    % % % ylabel('cm/s')
+    % % % grid on;
+    % % % subplot(235)
+    % % % plot(twin-PreStim/1000,mean(SpeMatrix(ors==stimis(1),:)))
+    % % % axis([min(twin-PreStim/1000),max(twin-PreStim/1000),0,1.1*max(SpeMatrix(:))]);
+    % % % xlabel('s')
+    % % % grid on;
+    % % % subplot(236)
+    % % % plot(twin-PreStim/1000,mean(SpeMatrix(ors==stimis(2),:)));
+    % % % axis([min(twin-PreStim/1000),max(twin-PreStim/1000),0,1.1*max(SpeMatrix(:))]);
+    % % % grid on;
+    %% FEATURES
+    RowsGO=find(ors==stimis(1));
+    RowsNOGO=find(ors==stimis(2));
+
+    Vgo=SpeMatrix(RowsGO(RowsGO<size(SpeMatrix,1)),:);
+    Vnogo=SpeMatrix(RowsNOGO(RowsNOGO<size(SpeMatrix,1)),:);
+    
+    PercDistGo=100*sum(sum(Vgo*ws/1000))/(sum(sum(Vgo*ws/1000))+sum(sum(Vnogo*ws/1000)));
+    PercDistNoGo=100*sum(sum(Vnogo*ws/1000))/(sum(sum(Vgo*ws/1000))+sum(sum(Vnogo*ws/1000)));
+    % TotalDistance=(sum(sum(Vgo*ws/1000))+sum(sum(Vnogo*ws/1000)));
+    
+    PercLickGo=100*sum(sum(Rgo,2))/sum(R(:));
+    PercLickNoGo=100*sum(sum(Rnogo,2))/sum(R(:));
+    
+    % False Alarms
+    FAindx=find(STIMRESPONSE(:,2)=='FA');
+    Alter=0;
+    Same=0;
+    for j=1:numel(FAindx)
+        if FAindx(j)>1
+            if STIMRESPONSE(FAindx(j)-1,1)=='Go'
+                Alter=Alter+1;
+            else
+                Same=Same+1;
+            end
+        end
+    end
+    PercAlterFA=100*Alter/numel(FAindx);
+    PercSameFA=100*Same/numel(FAindx);
+    
+    % Hits
+    
+    MISSindx=find(STIMRESPONSE(:,2)=='Miss');
+    Alter=0;
+    Same=0;
+    for j=1:numel(MISSindx)
+        if MISSindx(j)>1
+            if STIMRESPONSE(MISSindx(j)-1,1)=='NoGo'
+                Alter=Alter+1;
+            else
+                Same=Same+1;
+            end
+        end
+    end
+    PercAlterMISS=100*Alter/numel(MISSindx);
+    PercSameMISS=100*Same/numel(MISSindx);
+    
+    
+    %% OUPUT: MAT FILE
+    fprintf('\n>Saving MAT file:')
+    IndxSeps=strfind(GNGfolder,filesep);
+    % CurrFolder=pwd;
+    CurrFolder=GNGfolder;
+    FolderIndx=strfind(CurrFolder,filesep);
+    Destinity=[CurrFolder(1:FolderIndx(end)),'GNG_results',filesep];
+    if ~exist(Destinity,'dir')
+        mkdir(Destinity)
+        fprintf('Directory: %s created',Destinity)
+    end
+    MouseName=MouseID{i};
+    DateName=Date{i};
+    SesionName=Sesion{i};
+    save([Destinity,MouseID{i},'-',Sesion{i},'.mat'],"MouseName","DateName","SesionName",...
+        "Hits","Performance","STIMRESPONSE","OUTPUT","Hrate",...
+        "dataperf","Entrpy","A","LickMatrix","D","SpeMatrix","MovMatrix");
+    fprintf('done.\n')
+    fprintf('<a href="matlab:dos(''explorer.exe /e, %s, &'')">See MAT file here</a>\n',Destinity);
+    
+    %% OUTPUT: TABLE
+    t=table({MouseID{i}},{Sesion{i}},{Date{i}},OUTPUT.H,OUTPUT.FA,OUTPUT.P,...
+        BestTrial, BestPerfo, WorstTrial, WorstFA,BestImproveTrail, BeststDeltaP,...
+        Hrate(end),MaxH, MaxHTrail,MinH, MinHTrail,PercDistGo,PercDistNoGo, TotalDistance,...
+        LickPercGO,LickPercNoGO,PercLickGo, PercLickNoGo,...
+        PercAlterFA,PercSameFA, PercAlterMISS,PercSameMISS,...
+        Prepe,Ptran,NtrialStblEntorpy,ACFlagone);
+    t.Properties.VariableNames={'ID','Session','Date','Hits','FA','P',...
+        'BestTrial', 'BestPerfo', 'WorstTrial', 'WorstFA','BestImprove', 'BeststDeltaP'...
+        'EntropyRate','MaxEtropy', 'MaxEtropyTrial','MinEnropy', 'MinEtropyTrial','GO_perc_dist','NOGO_perc_dist','TotalDist',...
+        'PercenLickGO','PercenLickNOGO','PercenLickGOb','PercenLickNOGOb',...
+        'FAperTRAN','FAperREP','MISSpercTRAN','MISSpercREP',...
+        'REP_prob','TRAN_prob','EntropiestTrial','ACCstim'};
+    
+    % Distance@Go
+    % Distance@NoGo
+    % Distance@Stim
+    % Distance@InterStim
+    % fs
+    Tall=[t;Tall];
+    disp(Tall);
+%     FolderIndx=strfind(GNGfolder,filesep);
+%     GNGfolderpre=GNGfolder(1:FolderIndx(end)-1);
+%     GNGfolder=uigetdir(GNGfolderpre);
+%     if GNGfolder==0
+%         checkFolders=false;
+%     end
+end
+fprintf('\n>Saving table:')
+writetable(Tall,[Destinity,MouseID{i},'.csv'])
+fprintf('done.\n')
+disp('Run the script >GoNoGo_Animal')

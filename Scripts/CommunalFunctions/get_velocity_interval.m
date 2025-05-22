@@ -18,8 +18,13 @@ else
 end 
 A=1;
 B=Nws;
+if B>N
+    B=N;
+    ws=ws*lastwin;
+end
 for n=1:numel(drate)
-    drate(n)=sum(d(A:B))/ws; % Distance per Time Period
+    % disp([A,B])
+    drate(n)=(d(B)-d(A))/ws; % Distance per Time Period
     A=B+1;
     B=B+Nws;
     if B>N

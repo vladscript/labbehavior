@@ -61,7 +61,8 @@ if ~stopflag
         f=round(1 + (Nframes-1).*rand(1,1));
         frame = read(v,f);
         imshow(frame)
-        title(sprintf('File: %s f=%i',NamesVideos{n},f))
+        t=title(sprintf('File: %s f=%i',NamesVideos{n},f));
+        t.Interpreter='none';
         rectangulo=drawrectangle(gca,'Color',[0.900 0.447 0.741],'FaceAlpha',0.1);
         P=rectangulo.Position;
         fprintf('[1]> Draw rectangular ROI\n[2]> Delete Rectangle Object:\n Right-click on rectangle:Delete Recatngle\n')

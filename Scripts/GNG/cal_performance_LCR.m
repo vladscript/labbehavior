@@ -1,17 +1,27 @@
 % this code read and plot behavioral data, and calculate % correct
 % response, % wait during delay
-function [corr_lick,per_corr,total_water]=cal_performance_LCR(task)
+% 1: rewards
+% 2: movement
+% 3: licks
+% 4: punishment
+% 5: stimuli: 1 Go, 2: NoGo
+function [corr_lick,per_corr,total_water,dataout]=cal_performance_LCR(task)
 %% process data
 
 rewout = task(:,1);
 rewout(find(rewout<2))=0;
-rewout(find(rewout>2))=1;
+rewout(find(rewout>2))=1;           % OUTPUT REWARD
 
 punout = task(:,4);
 punout(find(punout<1))=0; 
-punout(find(punout>1))=1;
+punout(find(punout>1))=1;           % OUTPUT PUNISHMENT
 
-oriout = task(:,5);
+oriout = task(:,5);                 % OUPUT ORIENTATIONS
+
+dataout.rew=rewout;
+dataout.pun=punout;
+
+
 oriout = roundn(oriout,-1);
 for i = 1:length(oriout)
     if oriout(i)<0.2
@@ -23,6 +33,8 @@ for i = 1:length(oriout)
         end
     end
 end
+
+dataout.ori=oriout;
 % find trials when a mouse waited during delay
 
 df_rew = diff(rewout);
@@ -51,8 +63,8 @@ for i = 1:size(df_rew,1)
 end
 
 df_ori = abs(df_ori); % 1 when stim-off
-pos_rew = find(df_rew); % indices for rewared trials
-pos_ori = find(df_ori); % indices for stim-off
+pos_rew = find(df_rew); % indices for rewared trials    
+pos_ori = find(df_ori); % indices for stim-off          
 go_stim=find(df_go>0);
 nogo_stim=find(df_nogo>0);
 
