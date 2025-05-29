@@ -60,11 +60,20 @@ dims = [1 45];
 definput = {'0.5'};
 COLNUMinput = inputdlg(prompt,dlgtitle,dims,definput);
 w=str2double(COLNUMinput)*fs;
+%  Binning
+prompt = {'Binning (vocalizations rate)'};
+dlgtitle = 'ms';
+dims = [1 30];
+definput = {'100'};
+bininput = inputdlg(prompt,dlgtitle,dims,definput);
+bin=str2double(fsinput)/1000; % SECONDS
+
 % w=Ns*fs;
 % Color Map for 
 ColorTypeVocals;
 CMtypes =cbrewer('qual','Paired',numel(Types));
 HayClass=false;
+TableOut=table();
 %% Main Loop
 if N>1
     Vall=zeros(N,L*fs/w);
@@ -118,7 +127,84 @@ for n=1:N
             Call(n,:)=Cbin;
         end
     end
+    %% Features
+    % Latency: [s]
+    Latency=Ta(1);
+    % Inter Vocal Interval: [s]
+    IVI=Ta(2:end)-Tb(1:end-1);
+    % Oberlaping Vocs: IVI<0
+    Noverlap=numel(find(IVI<0));
+    IVI(IVI<0)=0;
+    % Instant Frequency: [Hz]
+    INI=Ta(2:end)-Ta(1:end-1);
+    FI=1./(INI*10^-3);
+    % Vocal Duration: [s]
+    D=Tb-Ta;
+    % Rate Binning: [Hz]
+    [tbin,VF]=vocalfreq(Ta,Tb,bin);
+    RateV=VF/bin; 
+    Rate=RateV(RateV>0);
+    
+    % Stats & Features 
+    % maximum
+    IVImax=max(IVI);
+    FImax=max(FI);
+    Dmax=max(D);
+    Rmax=max(Rate);
+    % mean
+    IVImean=mean(IVI);
+    FImean=mean(FI);
+    Dmean=mean(D);
+    Rmean=mean(Rate);
+    % mode
+    IVImode=mode(IVI);
+    FImode=mode(FI);
+    Dmode=mode(D);
+    Rmode=mode(Rate);
+    % minimum
+    IVImin=min(IVI);
+    FImin=min(FI);
+    Dmin=min(D);
+    Rmin=min(Rate);
+    % Coefficient of Variation (Regular Rates)
+    IVIcv=mean(IVI)/std(IVI);
+    % FIcv=mean(FI)/std(FI);
+    % Dcv=mean(D)/std(D);
+    Rcv=mean(Rate)/std(Rate);
+    % OUTPUT
+    FName=Archs{n};
+    T=table({FName},Latency,IVImin,IVImode,IVImean,IVImax,IVIcv,...
+        FImin,FImode,FImean,FImax,...
+        Dmin,Dmode,Dmean,Dmax,...
+        Rmin,Rmode,Rmean,Rmax,Rcv, ...
+        Noverlap);
+    F=figure;
+    F.Units='normalized';
+    title(FName)
+    subplot(411)
+    histogram(IVI)
+    xlabel('Inter Vocalizations Intervals [s]')
+    ylabel('#')
+    axis tight; grid on;
+    subplot(412)
+    histogram(FI)
+    xlabel('Instant Frequency [Hz]')
+    ylabel('#')
+    axis tight; grid on;
+    subplot(413)
+    histogram(D)
+    xlabel('Voc. Duration [s]')
+    ylabel('#')
+    axis tight; grid on;
+    subplot(414)
+    bar(tbin,VF)
+    xlabel('Time [s]')
+    ylabel('Voc. Rate (Hz)')
+    axis tight; grid on;
+    F.Position= [0.1667 0.0676 0.2406 0.7778];
+    TableOut=[TableOut;T];
 end
+
 %% Outputs
 if N==1
     Ncols=L/(w/fs)/rownum;
@@ -151,3 +237,10 @@ else
     end
     disp(table([1:N]',Archs','VariableNames',{'Rows','File Names'}));
 end
+%% Write Table
+filetime=char(datetime("now"));
+filetime(filetime==':')='_';
+filetime(filetime==' ')='-';
+Destination=[Direction,'Table_',filetime,'.csv'];
+writetable(TableOut,Destination);
+fprintf('<a href="matlab:dos(''explorer.exe /e, %s, &'')">See output table here</a>\n',Direction);
