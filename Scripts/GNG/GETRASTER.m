@@ -9,7 +9,7 @@ ws=100;     % Sliding Window [ms]
 cylrad=5;   % Cylinder Radius[cm]
 ol=0;       % Window OverLapping (Speed and Licking Rate) [%]
 fs=1000;    % [Hz] NIDAQ  Sampling Frequency
-    PreStim=round(Nsec*fs); % Samples Pre Stimulus
+PreStim=round(Nsec*fs); % Samples Pre Stimulus
 
 % GNGfolder=uigetdir(pwd);
 %% Get Session Folders of X- mouse
@@ -562,4 +562,4 @@ end
 fprintf('\n>Saving table:')
 writetable(Tall,[Destinity,MouseID{i},'.csv'])
 fprintf('done.\n')
-disp('Run the script >GoNoGo_Animal')
+% disp('Run the script >GoNoGo_Animal')

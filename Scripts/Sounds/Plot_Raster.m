@@ -5,8 +5,6 @@
 %           fs=1            Bin Window
 %           stepy=2;        Step between rows Yticks
 %           indexes=1:C;    Sort
-%           ColocateIndx=[];
-%   Neurons:Colocalized
 % Output
 % figure of the raster in MINUTES
 % Always creates a new figure
