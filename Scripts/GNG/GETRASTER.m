@@ -228,8 +228,10 @@ for i=1:numel(FolderSessions)
     A = MATTRAN/sum(MATTRAN(:));
     Prepe=sum(A([1,4]));
     Ptran=sum(A([2,3]));
-    pdfE=histogram(Entrpy);
-    asyEnt=pdfE.BinEdges(end-1);
+    % pdfE=histogram(Entrpy);
+    % asyEnt=pdfE.BinEdges(end-1);
+    [~,BinEdges] = histcounts(Entrpy,'Normalization','probability');
+    asyEnt=BinEdges(end-1);
     NtrialStblEntorpy=find(smooth(Entrpy)>=asyEnt,1);
 
     [BestPerfo,BestTrial]=max(OUTPUT.InstaPerfor(NtrialStblEntorpy:end));
@@ -355,7 +357,7 @@ for i=1:numel(FolderSessions)
     LicksNoGo=LickMatrix(ors==stimis(2),:);
     LickPercGO=100*sum(LicksGo(:))/(sum(LicksGo(:))+sum(LicksNoGo(:)));
     LickPercNoGO=100*sum(LicksNoGo(:))/(sum(LicksGo(:))+sum(LicksNoGo(:)));
-    %% PLOT RASTER (fast vis)
+    %% PLOT RASTER (fast visualization)
     % Input (Lick Matrix,ors,)
     if size(LickMatrix,1)<numel(ors)
         LickMatrix(end+1,:)=zeros(size(LickMatrix(1,:)));
@@ -412,10 +414,13 @@ for i=1:numel(FolderSessions)
     % % % title('Complete')
     % % % colormap(CM);
     %% LICK RATE
+    % R: Matrix of Lick Rates [Hz]
+    % T: Time Vector
     [T,R]=lickrate(LickMatrix,ws,ol,fs);
 %     LRfig=figure;
     Rgo=R(ors==stimis(1),:);
     Rnogo=R(ors==stimis(2),:);
+    figure
     subplot(131)
     plot(T-PreStim/fs,R,'Color',[0.9 0.9 0.9]);
     hold on;
@@ -428,7 +433,7 @@ for i=1:numel(FolderSessions)
     subplot(132)
     plot(T-PreStim/fs,R(ors==stimis(1),:),'Color',[0.95 0.95 0.95]);
     hold on;
-    plot(T-PreStim/fs,mean(R(ors==stimis(1),:)),'LineWidth',2); 
+    plot(T-PreStim/fs,mean(R(ors==stimis(1),:),1),'LineWidth',2); 
     rectangle('Position',[PreStim/fs 0 StimLength/fs max(Rgo(:))],'EdgeColor','k');
     grid on;
     title(sprintf('Stim: %i °',stimis(1)))
@@ -440,6 +445,9 @@ for i=1:numel(FolderSessions)
     grid on;
     title(sprintf('Stim: %i °',stimis(2)))
     LRfig.Position=[889.8000 416.2000 560.0000 199.2000];
+
+    LickRateMeanGo=mean(R(ors==stimis(1),:),1);
+    LickRateMeanNoGo=mean(R(ors==stimis(2),:),1);
     %% MOVEMENT PLOTS
     % % % figure
     % % % subplot(211)
