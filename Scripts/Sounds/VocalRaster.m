@@ -74,12 +74,16 @@ ColorTypeVocals;
 CMtypes =cbrewer('qual','Paired',numel(Types));
 HayClass=false;
 TableOut=table();
+Tallvalues=table();
 %% Main Loop
 if N>1
     Vall=zeros(N,L*fs/w);
     Nall=zeros(N,L*fs/w);
     Lall=zeros(N,L*fs/w);
 end
+IVIall=[];
+CWall=[];
+Dall=[];
 for n=1:N
     fprintf('\n>Loading %s, ',Archs{n})
     DATA=readtable([Direction,Archs{n}]);
@@ -132,78 +136,93 @@ for n=1:N
     Latency=Ta(1);
     % Inter Vocal Interval: [s]
     IVI=Ta(2:end)-Tb(1:end-1);
+    IVIall=[IVIall;IVI]
     % Oberlaping Vocs: IVI<0
     Noverlap=numel(find(IVI<0));
-    IVI(IVI<0)=0;
-    % Instant Frequency: [Hz]
-    INI=Ta(2:end)-Ta(1:end-1);
-    FI=1./(INI*10^-3);
+    % IVI(IVI<0)=0;
+    % Instant Frequency: [Hz] Ignored
+
+    % FI=1./(INI*10^-3);
+    % FIall=[FIall;FI];
+    
     % Vocal Duration: [s]
     D=Tb-Ta;
+    Dall=[Dall;D];
+    % Work Cycle [%]
+    INI=Ta(2:end)-Ta(1:end-1);
+    CW=100*D(1:end-1)./INI;
+    CWall=[CWall;CW];
     % Rate Binning: [Hz]
     [tbin,VF]=vocalfreq(Ta,Tb,bin);
     RateV=VF/bin; 
     Rate=RateV(RateV>0);
     
-    % Stats & Features 
+    % Stats & Features: Ignore Overlapped (!)
     % maximum
-    IVImax=max(IVI);
-    FImax=max(FI);
+    IVImax=max(IVI(IVI>0));
+    CWmax=max(CW(CW<100)); 
     Dmax=max(D);
     Rmax=max(Rate);
     % mean
-    IVImean=mean(IVI);
-    FImean=mean(FI);
+    IVImean=mean(IVI(IVI>0));
+    CWmean=mean(CW(CW<100));
     Dmean=mean(D);
     Rmean=mean(Rate);
     % mode
-    IVImode=mode(IVI);
-    FImode=mode(FI);
+    IVImode=mode(IVI(IVI>0));
+    CWmode=mode(CW(CW<100));
     Dmode=mode(D);
     Rmode=mode(Rate);
     % minimum
-    IVImin=min(IVI);
-    FImin=min(FI);
+    IVImin=min(IVI(IVI>0));
+    CWmin=min(CW(CW<100));
     Dmin=min(D);
     Rmin=min(Rate);
     % Coefficient of Variation (Regular Rates)
-    IVIcv=mean(IVI)/std(IVI);
+    IVIcv=mean(IVI(IVI>0))/std(IVI(IVI>0));
     % FIcv=mean(FI)/std(FI);
     % Dcv=mean(D)/std(D);
     Rcv=mean(Rate)/std(Rate);
     % OUTPUT
     FName=Archs{n};
     T=table({FName},Latency,IVImin,IVImode,IVImean,IVImax,IVIcv,...
-        FImin,FImode,FImean,FImax,...
+        CWmin,CWmode,CWmean,CWmax,...
         Dmin,Dmode,Dmean,Dmax,...
         Rmin,Rmode,Rmean,Rmax,Rcv, ...
         Noverlap);
-    F=figure;
-    F.Units='normalized';
-    title(FName)
-    subplot(411)
-    histogram(IVI)
-    xlabel('Inter Vocalizations Intervals [s]')
-    ylabel('#')
-    axis tight; grid on;
-    subplot(412)
-    histogram(FI)
-    xlabel('Instant Frequency [Hz]')
-    ylabel('#')
-    axis tight; grid on;
-    subplot(413)
-    histogram(D)
-    xlabel('Voc. Duration [s]')
-    ylabel('#')
-    axis tight; grid on;
-    subplot(414)
-    bar(tbin,VF)
-    xlabel('Time [s]')
-    ylabel('Voc. Rate (Hz)')
-    axis tight; grid on;
-    F.Position= [0.1667 0.0676 0.2406 0.7778];
+    
     TableOut=[TableOut;T];
+    Tvalues=table(repmat({FName},size(D)),D,[IVI;NaN],[CW;NaN]);
+    Tallvalues=[Tallvalues;Tvalues];
 end
+%%
+F=figure;
+F.Units='normalized';
+title(FName)
+subplot(311)
+% histogram(IVIall)
+cdfplot(IVIall)
+xlabel('Inter Vocalizations Intervals [s]')
+ylabel('Cumulative Probability')
+axis tight; grid on;
+subplot(312)
+% histogram(CWall)
+cdfplot(CWall);
+xlabel('Work Cycle [%]')
+ylabel('Cumulative Probability')
+axis tight; grid on;
+subplot(313)
+% histogram(Dall)
+cdfplot(Dall)
+xlabel('Voc. Duration [s]')
+ylabel('Cumulative Probability')
+axis tight; grid on;
+%     subplot(414)
+%     bar(tbin,VF)
+%     xlabel('Time [s]')
+%     ylabel('Voc. Rate (Hz)')
+%     axis tight; grid on;
+    F.Position= [0.1667 0.0676 0.2406 0.7778];
 
 %% Outputs
 if N==1
@@ -238,9 +257,12 @@ else
     disp(table([1:N]',Archs','VariableNames',{'Rows','File Names'}));
 end
 %% Write Table
+Tallvalues.Properties.VariableNames={'File','Duration_s','IVI_s','WorkCycle_%'};
 filetime=char(datetime("now"));
 filetime(filetime==':')='_';
 filetime(filetime==' ')='-';
 Destination=[Direction,'Table_',filetime,'.csv'];
 writetable(TableOut,Destination);
+Destination=[Direction,'Table_ALLVALUES_',filetime,'.csv'];
+writetable(Tallvalues,Destination);
 fprintf('<a href="matlab:dos(''explorer.exe /e, %s, &'')">See output table here</a>\n',Direction);
