@@ -136,7 +136,7 @@ for n=1:N
     Latency=Ta(1);
     % Inter Vocal Interval: [s]
     IVI=Ta(2:end)-Tb(1:end-1);
-    IVIall=[IVIall;IVI]
+    IVIall=[IVIall;IVI];
     % Oberlaping Vocs: IVI<0
     Noverlap=numel(find(IVI<0));
     % IVI(IVI<0)=0;
@@ -160,22 +160,22 @@ for n=1:N
     % Stats & Features: Ignore Overlapped (!)
     % maximum
     IVImax=max(IVI(IVI>0));
-    CWmax=max(CW(CW<100)); 
+    CWmax=max(CW(and(CW>0,CW<100))); 
     Dmax=max(D);
     Rmax=max(Rate);
     % mean
     IVImean=mean(IVI(IVI>0));
-    CWmean=mean(CW(CW<100));
+    CWmean=mean(CW(and(CW>0,CW<100)));
     Dmean=mean(D);
     Rmean=mean(Rate);
     % mode
     IVImode=mode(IVI(IVI>0));
-    CWmode=mode(CW(CW<100));
+    CWmode=mode(CW(and(CW>0,CW<100)));
     Dmode=mode(D);
     Rmode=mode(Rate);
     % minimum
     IVImin=min(IVI(IVI>0));
-    CWmin=min(CW(CW<100));
+    CWmin=min(CW(and(CW>0,CW<100)));
     Dmin=min(D);
     Rmin=min(Rate);
     % Coefficient of Variation (Regular Rates)
@@ -201,19 +201,22 @@ F.Units='normalized';
 title(FName)
 subplot(311)
 % histogram(IVIall)
-cdfplot(IVIall)
+C1=cdfplot(IVIall(IVIall>0));
 xlabel('Inter Vocalizations Intervals [s]')
 ylabel('Cumulative Probability')
 axis tight; grid on;
 subplot(312)
 % histogram(CWall)
-cdfplot(CWall);
+C2=cdfplot(CWall(and(CWall>0,CWall<100)));
 xlabel('Work Cycle [%]')
 ylabel('Cumulative Probability')
 axis tight; grid on;
 subplot(313)
 % histogram(Dall)
-cdfplot(Dall)
+C3=cdfplot(Dall);
+C1.LineWidth=2;
+C2.LineWidth=2;
+C3.LineWidth=2;
 xlabel('Voc. Duration [s]')
 ylabel('Cumulative Probability')
 axis tight; grid on;
