@@ -109,7 +109,7 @@ for n=1:N
         a=round(Ta(m)*fs);
         b=round(Tb(m)*fs);
         l=DATA.CallLength_s_(m);        % length
-        coltype=indxcols(m);
+        
         % V(a:b)=1;
         inicio=ceil(a/w);
         fin=ceil(b/w);
@@ -120,6 +120,7 @@ for n=1:N
         Nbin(inicio:fin)=Nbin(inicio:fin)+1;  % N vocs
         Dbin(inicio:fin)=Dbin(inicio:fin)+l;  % Length
         if HayClass
+            coltype=indxcols(m);
             Cbin(inicio:fin)=coltype;  % Color
         end
     end
